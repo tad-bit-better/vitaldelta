@@ -1,0 +1,8 @@
+.rows-debug { padding: 24px; font-family: system-ui, sans-serif; color: #111; background: #fff; min-height: 100vh; }
+.rows-debug section { margin-top: 28px; overflow-x: auto; }
+.rows-debug-bar, .rows-debug form { display: flex; gap: 8px; margin-top: 12px; }
+.rows-debug table { border-collapse: collapse; font-size: 13px; width: 100%; }
+.rows-debug th, .rows-debug td { border-bottom: 1px solid #ddd; padding: 4px 8px; text-align: left; vertical-align: top; }
+.rows-debug details { margin-top: 12px; }
+.rows-debug-item { display: inline-block; margin: 0 4px 2px 0; padding: 0 4px; border: 1px solid #ccd; border-radius: 3px; background: #f4f6fb; }
+.rows-debug-review { background: #fff4e0; }
