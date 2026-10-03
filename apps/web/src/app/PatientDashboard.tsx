@@ -68,7 +68,7 @@ export default function PatientDashboard({ profileId, notice }: { profileId: str
             )}
             <button type="button" className="app-btn app-btn-sm" onClick={() => setRenaming(profile.name)}>Rename</button>
             <button type="button" className="app-btn app-btn-sm" onClick={() => setConfirmDeletePatient(true)}>
-              Delete patient
+              Delete<span className="app-wide-only"> patient</span>
             </button>
           </div>
         )}

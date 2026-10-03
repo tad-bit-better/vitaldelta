@@ -121,3 +121,15 @@
 .lp-footer nav { display: flex; gap: 24px; flex-wrap: wrap; }
 
 @media (prefers-reduced-motion: reduce) { .lp .lp-btn-primary { transition: none; } }
+
+/* Phones: logo and GitHub only in the nav (the hero's button is right below), a shorter gap
+   above the hero, and full-width buttons. */
+@media (max-width: 640px) {
+  .lp-nav { flex-wrap: nowrap; padding-block: 16px; }
+  .lp-nav-section, .lp-nav-cta { display: none !important; }
+  .lp-hero { gap: 40px; padding-block: 20px 56px; }
+  .lp-hero-copy { gap: 20px; }
+  .lp-lead { font-size: 17px; }
+  .lp-actions { flex-direction: column; align-items: stretch; }
+  .lp-actions .lp-btn { justify-content: center; }
+}

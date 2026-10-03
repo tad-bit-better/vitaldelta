@@ -207,6 +207,16 @@ what happens, why, and what to do.
 - **iPhone/iPad note** (`IosNote`) shows only in Safari when not opened from the home screen.
   The Install button only appears where the browser offers installing (Chrome, Edge, Android).
 
+## Phones
+
+- **Below 560px the app drops its outer box** (the screen is the frame), uses smaller type,
+  turns the patient list into a row of chips and shows shorter labels: text in
+  `.app-wide-only` is hidden and `.app-narrow-only` controls (like "Show all") appear. Keep
+  long labels short on phones this way rather than letting buttons wrap.
+- **Phones start with the tests as a list**; cards are two per row with name, value and status.
+- **Check layouts with `scripts/screenshots.mjs`** (phone and desktop screenshots of every
+  screen using the demo data). The e2e test runs at desktop width only.
+
 ## Accessibility
 
 - **AppShell sets each page's title and moves focus to the page's `<h1>`** after navigation,

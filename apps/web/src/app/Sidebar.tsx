@@ -30,8 +30,15 @@ export default function Sidebar({ activeId, dataActive }: { activeId: string | n
                 >
                   <span className="app-patient-name">{p.name}</span>
                   <span className="app-patient-meta">
-                    {reports.length} report{reports.length === 1 ? '' : 's'}
-                    {outside > 0 && <span className="app-status-out"> · {outside} outside range</span>}
+                    <span className="app-wide-only">
+                      {reports.length} report{reports.length === 1 ? '' : 's'}
+                      {outside > 0 && ' · '}
+                    </span>
+                    {outside > 0 && (
+                      <span className="app-status-out">
+                        {outside} outside<span className="app-wide-only"> range</span>
+                      </span>
+                    )}
                   </span>
                 </Link>
               </li>
@@ -40,7 +47,7 @@ export default function Sidebar({ activeId, dataActive }: { activeId: string | n
         </ul>
       )}
       <Link to={DATA_PATH} className="app-sidebar-data" aria-current={dataActive ? 'page' : undefined}>
-        Your data: backup, restore, delete
+        Your data<span className="app-wide-only">: backup, restore, delete</span>
       </Link>
     </nav>
   );

@@ -38,15 +38,15 @@ function SummaryTable({ caption, tests }: { caption: string; tests: TestSeries[]
           {tests.map((t) => (
             <tr key={t.key}>
               <th scope="row">{t.name}</th>
-              <td className="summary-num">{value(t.latest)}</td>
-              <td>{formatDate(t.latest.date)}</td>
-              <td className="summary-num">{rangeCell(t.latest)}</td>
-              <td>
+              <td className="summary-num" data-label="Latest">{value(t.latest)}</td>
+              <td data-label="Date">{formatDate(t.latest.date)}</td>
+              <td className="summary-num" data-label="Range">{rangeCell(t.latest)}</td>
+              <td data-label="Status">
                 <span className={`app-status app-status-${tone(t.latest.status)}`}>
                   <span aria-hidden="true">{STATUS[t.latest.status].icon}</span> {STATUS[t.latest.status].label}
                 </span>
               </td>
-              <td className="summary-num">
+              <td className="summary-num" data-label="Previous">
                 {t.change ? (
                   <>
                     {value(t.change.from)} <span className="app-muted">({formatDate(t.change.from.date)})</span>
@@ -55,7 +55,7 @@ function SummaryTable({ caption, tests }: { caption: string; tests: TestSeries[]
                   '—'
                 )}
               </td>
-              <td className="summary-num">{t.change ? formatPercent(t.change.percent) : '—'}</td>
+              <td className="summary-num" data-label="Change">{t.change ? formatPercent(t.change.percent) : '—'}</td>
             </tr>
           ))}
         </tbody>

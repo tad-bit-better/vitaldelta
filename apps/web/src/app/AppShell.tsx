@@ -175,12 +175,15 @@ export default function AppShell() {
         <div className="app-bar-end">
           {demo ? (
             <span className="app-session app-demo">
-              Demo with made-up sample data · nothing is saved{' '}
+              Demo<span className="app-wide-only"> with made-up sample data · nothing is saved</span>
+              <span className="app-narrow-only"> ·</span>{' '}
               <button type="button" className="app-link-btn" onClick={exitDemo}>Exit demo</button>
             </span>
           ) : (
             storage?.mode === 'session' && (
-              <span className="app-session">Just this session · closing this tab erases everything</span>
+              <span className="app-session">
+                Just this session<span className="app-wide-only"> · closing this tab erases everything</span>
+              </span>
             )
           )}
           {install && (

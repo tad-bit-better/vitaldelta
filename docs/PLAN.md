@@ -30,7 +30,7 @@ Things decided or found in conversation that aren't done yet.
 - [ ] MPV and PDW print "%" on the owner's lab report; confirm under "Raw rows" on /dev/rows whether the lab really prints % (then they stay unrecognised) or the parser picked the wrong token
 - [ ] Owner's browser has a "Me" patient created before multi-patient support; rename it or delete and re-add the report
 - [ ] Lab name isn't auto-detected yet; one PDF per upload
-- [ ] Before launch (Day 10): set the landing page GitHub link (currently "#"), add the LOINC copyright notice to README and an About page
+- [ ] Before launch (Day 10): add the LOINC copyright notice to README and an About page
 - [ ] Optional: switch Cloudflare DNS to Vercel's newer recommended records; make the vitaldelta.vercel.app redirect a 308
 
 ## After launch

@@ -21,8 +21,13 @@ const LAYOUTS: { value: Layout; label: string; icon: string }[] = [
 
 // View choices live in memory only (session mode must not write anything to disk). Module
 // scope keeps them while moving between pages; a reload resets them.
-const remembered: { order: StatusOrder; layout: Layout } = { order: 'attention-first', layout: 'grid' };
+// Phones start with the list: one compact row per test instead of a tall card.
+const remembered: { order: StatusOrder; layout: Layout } = {
+  order: 'attention-first',
+  layout: window.matchMedia('(max-width: 560px)').matches ? 'list' : 'grid',
+};
 
+/** Segmented control. Options with an icon show only the icon on phones (the label stays for screen readers). */
 function Toggle<T extends string>({ label, options, value, onChange }: {
   label: string;
   options: { value: T; label: string; icon?: string }[];
@@ -32,9 +37,17 @@ function Toggle<T extends string>({ label, options, value, onChange }: {
   return (
     <div className="app-toggle" role="group" aria-label={label}>
       {options.map((o) => (
-        <button key={o.value} type="button" className="app-toggle-btn" aria-pressed={value === o.value} onClick={() => onChange(o.value)}>
-          {o.icon && <span aria-hidden="true">{o.icon} </span>}
-          {o.label}
+        <button
+          key={o.value}
+          type="button"
+          className="app-toggle-btn"
+          aria-pressed={value === o.value}
+          aria-label={o.icon ? o.label : undefined}
+          title={o.icon ? o.label : undefined}
+          onClick={() => onChange(o.value)}
+        >
+          {o.icon && <span aria-hidden="true">{o.icon}</span>}
+          {o.icon ? <span className="app-wide-only" aria-hidden="true"> {o.label}</span> : o.label}
         </button>
       ))}
     </div>

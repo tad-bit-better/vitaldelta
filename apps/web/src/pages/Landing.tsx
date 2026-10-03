@@ -19,7 +19,7 @@ const checkpoints = [
 export default function Landing({
   startHref = '/app',
   demoHref = '/app?demo=1',
-  githubHref = '#',
+  githubHref = 'https://github.com/tad-bit-better/vitaldelta',
 }: LandingProps) {
   const linePath = checkpoints.map((p, i) => `${i ? 'L' : 'M'}${p.x} ${p.y}`).join(' ');
 
@@ -34,10 +34,11 @@ export default function Landing({
           <span>VitalDelta</span>
         </a>
         <nav aria-label="Main" className="lp-nav-links">
-          <a href="#how">How it works</a>
-          <a href="#privacy">Privacy</a>
+          <a href="#how" className="lp-nav-section">How it works</a>
+          <a href="#privacy" className="lp-nav-section">Privacy</a>
           <a href={githubHref}>GitHub</a>
-          <a href={startHref} className="lp-btn lp-btn-primary lp-btn-sm">Get started</a>
+          {/* Phones hide this: the hero's own button is right below. */}
+          <a href={startHref} className="lp-btn lp-btn-primary lp-btn-sm lp-nav-cta">Get started</a>
         </nav>
       </header>
 

@@ -377,12 +377,56 @@ type EditorProps = {
   onEdit: (change: Partial<Draft>) => void;
 };
 
+/** "12–15.5", "< 200", "> 40" or "no range", from the draft's range fields. */
+function draftRange(d: Draft): string {
+  if (d.refLow && d.refHigh) return `${d.refLow}–${d.refHigh}`;
+  if (d.refHigh) return `≤ ${d.refHigh}`;
+  if (d.refLow) return `≥ ${d.refLow}`;
+  return 'no range';
+}
+
 function ResultEditor({ draft: d, onUpdate, onEdit }: EditorProps) {
   const marker = d.markerId ? markerById.get(d.markerId) : undefined;
   const issues = d.source?.issues ?? [];
   const errors = d.status === 'confirmed' ? problems(d) : [];
   const disabled = d.status === 'rejected';
   const original = d.source?.original;
+  // Confident, untouched rows are one line to skim; the form opens on Edit. Rows needing a
+  // check, edited or added rows, and rows with a problem always show the form.
+  const [open, setOpen] = useState(false);
+  const compact = !open && !d.flagged && !d.edited && d.source !== null && errors.length === 0;
+
+  if (compact) {
+    return (
+      <li id={rowId(d.key)} className={`app-result app-result-compact app-result-${d.status}`}>
+        <div className="app-result-line">
+          <span className="app-result-name">{d.name}</span>
+          <span className="app-result-detail">
+            <span className="app-result-value">
+              {d.value} <span className="app-muted">{d.unit}</span>
+            </span>
+            <span className="app-result-range app-muted">{draftRange(d)}</span>
+          </span>
+        </div>
+        <div className="app-result-actions">
+          {d.status === 'rejected' ? (
+            <button type="button" className="app-btn app-btn-sm" onClick={() => onUpdate({ status: 'confirmed' })}>
+              Undo reject
+            </button>
+          ) : (
+            <>
+              <button type="button" className="app-btn app-btn-sm" onClick={() => setOpen(true)} aria-label={`Edit ${d.name}`}>
+                Edit
+              </button>
+              <button type="button" className="app-btn app-btn-sm" onClick={() => onUpdate({ status: 'rejected' })} aria-label={`Reject ${d.name}`}>
+                Reject
+              </button>
+            </>
+          )}
+        </div>
+      </li>
+    );
+  }
 
   return (
     <li id={rowId(d.key)} className={`app-result app-result-${d.status}`}>
