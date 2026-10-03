@@ -10,3 +10,6 @@ export { canonicalUnit, convert, type Conversion } from './units';
 export { createMatcher, matchMarker, type MarkerMatch } from './match';
 export { extractResults, REVIEW_THRESHOLD, type ExtractedResult, type Issue } from './extract';
 export { detectReportDate, findDate, type DetectedDate } from './reportDate';
+export { detectDrift, type Drift, type DriftOptions } from './trends';
+export { detectPatient, nameSimilarity, SAME_PERSON, type DetectedPatient, type Sex } from './patient';
+export { describeStatus, NEAR_FRACTION, percentChange, percentOutside, rangeStatus, type RangedValue, type RangeStatus } from './flags';
