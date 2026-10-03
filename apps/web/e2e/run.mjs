@@ -237,6 +237,7 @@ try {
   const options = (await text('.app-patient-options')) ?? '';
   check(/^Asha Rao \(sample\)[^]*?Suggested[^]*Vikram/.test(options), 'sample report reads through the real pipeline and suggests its patient');
   await a11y('review');
+  check(await evaluate(`!!document.activeElement?.closest('#review-patient')`), 'after the last row to check, focus moves to the next thing to do (choose the patient)');
   await pickPatient('Asha Rao (sample)');
   await save();
   check((await text('.app-patient[aria-current="page"]'))?.includes('5 reports'), 'sample report saved in the demo');
@@ -251,7 +252,7 @@ try {
   await goto('/app');
   await waitForText('Where should your results live?');
   await click('Just this session');
-  await waitForText('No reports yet');
+  await waitForText('Add your first report');
   await addReport('r1.pdf');
   check((await text('.app-patient-pick > p'))?.includes('Arjun Mehta · male · 34 years'), 'patient name, sex and age detected');
   check(!(await saveEnabled()) && (await saveBar()).includes('choose who this report is for'), 'save blocked until a patient is chosen');
@@ -265,7 +266,7 @@ try {
   // ---------- Saved on this device ----------
   console.log('\nSaved on this device, two patients');
   await click('Save on this device');
-  await waitForText('No reports yet');
+  await waitForText('Add your first report');
   await addReport('r1.pdf', async () => {
     check((await text('.app-result-pending'))?.includes('Homocysteine'), 'unrecognised test is held for review');
   });
@@ -378,8 +379,9 @@ try {
   check((await text('.app-choice-notice')) === 'All data deleted.', 'delete all returns to the first screen');
   check((await evaluate(`indexedDB.databases().then((d) => d.length)`)) === 0, 'delete all removed the database');
   await click('Save on this device');
-  await waitForText('No reports yet');
-  await clickLink('Your data');
+  await waitForText('Add your first report');
+  check(!(await evaluate(`!!document.querySelector('.app-sidebar')`)), 'welcome screen stands alone (no sidebar before the first report)');
+  await clickLink('Restore a backup');
   await waitForText('Backup file');
   if (backupFile) {
     await upload(backupFile.slice(work.length + 1));

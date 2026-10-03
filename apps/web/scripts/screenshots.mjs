@@ -1,5 +1,5 @@
 // Screenshots of every screen (landing, dashboard, test, summary, your data, upload, review,
-// first screen) using the demo data, one image per screenful. For checking layouts by eye,
+// first screen, welcome) using the demo data, one image per screenful. For checking layouts by eye,
 // especially on phones.
 //
 //   pnpm --filter web build && (cd apps/web && npx vite preview --port 4194 &)
@@ -47,4 +47,5 @@ await click('a', 'Your data'); await sleep(800); await shot('5-data');
 await click('button', '+ Add a report'); await sleep(800); await shot('6-upload');
 await click('button', 'Use a made-up sample report'); await sleep(2500); await shot('7-review');
 await click('button', 'Exit demo'); await sleep(800); await shot('8-choice');
+await click('button', 'Just this session'); await sleep(800); await shot('9-welcome');
 ws.close(); chrome.kill();

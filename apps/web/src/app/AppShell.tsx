@@ -17,6 +17,7 @@ import Summary from './Summary';
 import { StorageContext } from './StorageContext';
 import TestDetail from './TestDetail';
 import Upload, { type Extracted } from './Upload';
+import Welcome from './Welcome';
 
 function open(mode: StorageMode): Storage {
   if (mode === 'session') return createMemoryStorage();
@@ -136,6 +137,7 @@ export default function AppShell() {
   }, [route.name, firstProfile]);
 
   const data: AppData | null = loaded && { ...loaded, reload };
+  const welcome = route.name === 'home' && loaded?.profiles.length === 0;
   const activeId = route.name === 'patient' || route.name === 'test' || route.name === 'summary' ? route.profileId : null;
   // Back to the first-use choice (after Delete all data, or leaving the demo), with nothing
   // left in memory either.
@@ -207,8 +209,9 @@ export default function AppShell() {
         ) : !data ? null : (
           <StorageContext.Provider value={storage}>
             <DataContext.Provider value={data}>
-              <div className="app-layout">
-                <Sidebar activeId={activeId} dataActive={route.name === 'data'} />
+              {/* Before the first report there's nothing for the sidebar to list: the welcome screen stands alone. */}
+              <div className={`app-layout${welcome ? ' app-layout-solo' : ''}`}>
+                {!welcome && <Sidebar activeId={activeId} dataActive={route.name === 'data'} />}
                 <div className="app-content">
                   {route.name === 'add' ? (
                     extracted ? (
@@ -233,17 +236,7 @@ export default function AppShell() {
                   ) : route.name === 'patient' ? (
                     <PatientDashboard key={route.profileId} profileId={route.profileId} notice={notice} />
                   ) : (
-                    <section className="app-card">
-                      <h1>Your results</h1>
-                      <p className="app-muted">
-                        No reports yet. Add a lab report PDF; you’ll choose who it’s for before saving.
-                      </p>
-                      <div>
-                        <button type="button" className="app-btn app-btn-primary" onClick={() => navigate('/app/add')}>
-                          Add a report
-                        </button>
-                      </div>
-                    </section>
+                    <Welcome onDemo={startDemo} />
                   )}
                 </div>
               </div>
