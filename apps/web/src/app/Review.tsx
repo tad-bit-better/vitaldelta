@@ -1,6 +1,9 @@
 import { markers, REVIEW_THRESHOLD, type ExtractedResult, type Issue } from '@vitaldelta/extraction';
 import { useState } from 'react';
 import type { NewResult } from '../storage/types';
+import { forProfile, useAppData } from './DataContext';
+import { formatDate } from './format';
+import { findDuplicate, mismatchReasons, suggestProfile } from './patients';
 import { useStorage } from './StorageContext';
 import type { Extracted } from './Upload';
 
@@ -35,6 +38,9 @@ const ISSUE_TEXT: Record<Issue, string> = {
 };
 
 const SOURCE_TEXT = { collected: 'collection date', received: 'received date', reported: 'report date', other: 'first date' };
+
+/** Names on a patient's reports that differ from their display name. */
+const otherNames = (p: { name: string; aliases: string[] }) => p.aliases.filter((a) => a.toLowerCase() !== p.name.toLowerCase());
 
 const sortedMarkers = [...markers].sort((a, b) => a.name.localeCompare(b.name));
 const markerById = new Map(markers.map((m) => [m.id, m]));
@@ -84,11 +90,21 @@ function toNewResult(d: Draft): NewResult {
   };
 }
 
-type Props = { extracted: Extracted; onSaved: () => void; onCancel: () => void };
+type Props = { extracted: Extracted; onSaved: (profileId: string) => void; onCancel: () => void };
+
+/** Who the report is for: an existing patient, or a new one. Never pre-selected; the user must choose. */
+type PatientChoice = { kind: 'existing'; id: string } | { kind: 'new' } | null;
 
 /** Check, correct, add or reject extracted results, then save them with the report date and lab. */
 export default function Review({ extracted, onSaved, onCancel }: Props) {
   const storage = useStorage();
+  const data = useAppData();
+  const detected = extracted.patient;
+  const suggested = suggestProfile(data.profiles, detected);
+  const [patient, setPatient] = useState<PatientChoice>(null);
+  const [newName, setNewName] = useState(detected.name ?? '');
+  const [differentReport, setDifferentReport] = useState(false);
+  const [samePerson, setSamePerson] = useState(false);
   const [drafts, setDrafts] = useState<Draft[]>(() => extracted.results.map(fromExtracted));
   const [collectedAt, setCollectedAt] = useState(extracted.detectedDate?.date ?? '');
   const [labName, setLabName] = useState('');
@@ -110,22 +126,59 @@ export default function Review({ extracted, onSaved, onCancel }: Props) {
   const total = drafts.length - drafts.filter((d) => d.status === 'rejected').length;
   const percent = total ? Math.round((ready / total) * 100) : 0;
 
+  const chosen = patient?.kind === 'existing' ? data.profiles.find((p) => p.id === patient.id) ?? null : null;
+  const warnings = chosen ? mismatchReasons(chosen, detected) : [];
+  const duplicate = chosen
+    ? findDuplicate(forProfile(data, chosen.id).reports, forProfile(data, chosen.id).results, {
+        collectedAt,
+        sourceFileName: extracted.fileName,
+        results: confirmed.filter((d) => isNumber(d.value)).map((d) => ({ markerId: d.markerId, value: Number(d.value) })),
+      })
+    : null;
+
   // Everything still blocking Save, each linked to where it can be fixed.
   const blockers: { text: string; target: string | null }[] = [];
+  if (!patient) blockers.push({ text: 'choose who this report is for', target: 'review-patient' });
+  if (patient?.kind === 'new' && !newName.trim()) blockers.push({ text: 'patient name missing', target: 'review-new-name' });
+  if (warnings.length && !samePerson) blockers.push({ text: 'confirm it’s the same person', target: 'review-mismatch' });
+  if (duplicate && !differentReport) blockers.push({ text: 'possible duplicate report', target: 'review-duplicate' });
   if (!collectedAt) blockers.push({ text: 'date missing', target: 'review-date' });
   if (pending.length) blockers.push({ text: `${plural(pending.length, 'result')} to check`, target: rowId(pending[0].key) });
   if (invalid.length) blockers.push({ text: `${plural(invalid.length, 'value')} to fix`, target: rowId(invalid[0].key) });
   if (!confirmed.length) blockers.push({ text: 'keep at least one result', target: null });
 
+  const done = blockers.length === 0 && ready === total && total > 0;
+
   async function save() {
     setSaving(true);
     setError(null);
     try {
+      let profileId: string;
+      if (patient?.kind === 'existing' && chosen) {
+        profileId = chosen.id;
+        // Remember the printed name (and sex) so future reports can be suggested for this patient.
+        const knownName = detected.name && chosen.aliases.some((a) => a.toLowerCase() === detected.name!.toLowerCase());
+        if ((detected.name && !knownName) || (!chosen.sex && detected.sex)) {
+          await storage.updateProfile(chosen.id, {
+            aliases: detected.name && !knownName ? [...chosen.aliases, detected.name] : chosen.aliases,
+            sex: chosen.sex ?? detected.sex,
+          });
+        }
+      } else {
+        const created = await storage.createProfile({
+          name: newName.trim(),
+          aliases: detected.name ? [detected.name] : [],
+          sex: detected.sex,
+        });
+        profileId = created.id;
+      }
       await storage.saveReport(
+        profileId,
         { collectedAt, labName: labName.trim() || null, sourceFileName: extracted.fileName },
         confirmed.map(toNewResult),
       );
-      onSaved();
+      await data.reload();
+      onSaved(profileId);
     } catch {
       setError('Saving failed. Your browser may be out of storage space.');
       setSaving(false);
@@ -139,6 +192,76 @@ export default function Review({ extracted, onSaved, onCancel }: Props) {
         From <strong>{extracted.fileName}</strong>. Compare with the PDF and fix anything that was read wrong.
         Highlighted rows need your check before saving.
       </p>
+
+      <fieldset className="app-patient-pick" id="review-patient">
+        <legend>Who is this report for?</legend>
+        <p className="app-muted">
+          {detected.name ? (
+            <>
+              Name on the report: <strong>{detected.name}</strong>
+              {[detected.sex, detected.age !== null ? `${detected.age} years` : null].filter(Boolean).map((t) => ` · ${t}`)}
+            </>
+          ) : (
+            'No patient name was found on the report.'
+          )}
+        </p>
+        <div className="app-patient-options">
+          {[...data.profiles]
+            .sort((a, b) => (a.id === suggested?.id ? -1 : b.id === suggested?.id ? 1 : 0))
+            .map((p) => (
+              <label key={p.id} className="app-option-row">
+                <input
+                  type="radio"
+                  name="patient"
+                  checked={patient?.kind === 'existing' && patient.id === p.id}
+                  onChange={() => {
+                    setPatient({ kind: 'existing', id: p.id });
+                    setDifferentReport(false);
+                    setSamePerson(false);
+                  }}
+                />
+                <span>
+                  <strong>{p.name}</strong>
+                  {otherNames(p).length > 0 && <span className="app-muted"> · on reports: {otherNames(p).join(', ')}</span>}
+                </span>
+                {p.id === suggested?.id && <span className="app-chip app-chip-confirmed">Suggested</span>}
+              </label>
+            ))}
+          <label className="app-option-row">
+            <input type="radio" name="patient" checked={patient?.kind === 'new'} onChange={() => setPatient({ kind: 'new' })} />
+            <span>
+              <strong>New patient</strong>
+            </span>
+          </label>
+          {patient?.kind === 'new' && (
+            <label className="app-field app-new-patient">
+              <span>Patient name (you can use “Me”, “Dad”…)</span>
+              <input id="review-new-name" value={newName} onChange={(e) => setNewName(e.target.value)} autoFocus />
+            </label>
+          )}
+        </div>
+        {warnings.length > 0 && (
+          <div className="app-warning" id="review-mismatch" role="alert">
+            {warnings.map((w) => <p key={w}>{w}</p>)}
+            <label className="app-option-row">
+              <input type="checkbox" checked={samePerson} onChange={(e) => setSamePerson(e.target.checked)} />
+              <span>Yes, this is the same person</span>
+            </label>
+          </div>
+        )}
+        {duplicate && (
+          <div className="app-warning" id="review-duplicate" role="alert">
+            <p>
+              This looks like a report you’ve already added for {chosen?.name}: {formatDate(duplicate.collectedAt)}
+              {duplicate.sourceFileName ? `, ${duplicate.sourceFileName}` : ''}.
+            </p>
+            <label className="app-option-row">
+              <input type="checkbox" checked={differentReport} onChange={(e) => setDifferentReport(e.target.checked)} />
+              <span>It’s a different report, save it anyway</span>
+            </label>
+          </div>
+        )}
+      </fieldset>
 
       <div className="app-row app-row-top">
         <label className="app-field">
@@ -199,11 +322,11 @@ export default function Review({ extracted, onSaved, onCancel }: Props) {
         </button>
       </div>
 
-      <div className={`app-savebar${ready === total && total > 0 ? ' app-savebar-done' : ''}`}>
+      <div className={`app-savebar${done ? ' app-savebar-done' : ''}`}>
         <progress className="app-savebar-progress" value={ready} max={Math.max(total, 1)} aria-labelledby="review-progress-label" />
         <div className="app-savebar-status" aria-live="polite">
           <p id="review-progress-label" className="app-savebar-headline">
-            {ready === total && total > 0
+            {done
               ? `✓ Ready to save ${plural(ready, 'result')}`
               : `Ready to save ${ready} of ${plural(total, 'result')}`}
             <span className="app-savebar-percent">{percent}%</span>

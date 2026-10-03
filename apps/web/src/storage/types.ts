@@ -1,8 +1,19 @@
-import type { Comparator } from '@vitaldelta/extraction';
+import type { Comparator, Sex } from '@vitaldelta/extraction';
 
 export type StorageMode = 'persistent' | 'session';
 
-export type Profile = { id: string; name: string; createdAt: string };
+/** A person whose reports are tracked together. */
+export type Profile = {
+  id: string;
+  /** Display name the user chose ("Me", "Dad", or a full name). */
+  name: string;
+  /** Names printed on this person's reports, used to suggest them for new reports. */
+  aliases: string[];
+  sex: Sex | null;
+  createdAt: string;
+};
+
+export type NewProfile = Pick<Profile, 'name' | 'aliases' | 'sex'>;
 
 export type Report = {
   id: string;
@@ -45,15 +56,19 @@ export type NewResult = Omit<Result, 'id' | 'reportId'>;
  */
 export interface Storage {
   readonly mode: StorageMode;
-  /** The single v1 profile, created on first use. */
-  getProfile(): Promise<Profile>;
+  /** Oldest first. */
+  listProfiles(): Promise<Profile[]>;
+  createProfile(profile: NewProfile): Promise<Profile>;
+  updateProfile(id: string, changes: Partial<NewProfile>): Promise<Profile>;
+  /** Deletes the profile with all its reports and results. */
+  deleteProfile(id: string): Promise<void>;
   /** Newest collection date first. */
-  listReports(): Promise<Report[]>;
+  listReports(filter?: { profileId?: string }): Promise<Report[]>;
   getReport(id: string): Promise<{ report: Report; results: Result[] } | null>;
   /** Saves a report and its results together (all or nothing). */
-  saveReport(report: NewReport, results: NewResult[]): Promise<Report>;
+  saveReport(profileId: string, report: NewReport, results: NewResult[]): Promise<Report>;
   deleteReport(id: string): Promise<void>;
-  listResults(filter?: { markerId?: string }): Promise<Result[]>;
+  listResults(filter?: { markerId?: string; profileId?: string }): Promise<Result[]>;
   /** Removes every report, result and profile from this backend. */
   deleteAll(): Promise<void>;
 }

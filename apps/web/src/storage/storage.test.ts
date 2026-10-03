@@ -28,17 +28,24 @@ describe.each([
 ])('%s storage', (_, create) => {
   let storage: Storage;
   afterEach(async () => storage.deleteAll());
+  const person = (name: string) => storage.createProfile({ name, aliases: [name], sex: null });
 
-  it('creates one profile and reuses it', async () => {
+  it('creates, lists, updates and deletes profiles', async () => {
     storage = create();
-    const a = await storage.getProfile();
-    expect(await storage.getProfile()).toEqual(a);
+    const a = await person('Arjun Mehta');
+    const b = await person('Priya Nair');
+    expect((await storage.listProfiles()).map((p) => p.name)).toEqual(['Arjun Mehta', 'Priya Nair']);
+    const renamed = await storage.updateProfile(a.id, { name: 'Me', aliases: ['Arjun Mehta', 'A Mehta'] });
+    expect(renamed).toMatchObject({ id: a.id, name: 'Me', aliases: ['Arjun Mehta', 'A Mehta'] });
+    await storage.deleteProfile(b.id);
+    expect((await storage.listProfiles()).map((p) => p.name)).toEqual(['Me']);
   });
 
   it('saves a report with its results and reads them back', async () => {
     storage = create();
-    const saved = await storage.saveReport(report('2024-03-11'), [result(), result({ markerId: null, name: 'Homocysteine', unit: 'µmol/L' })]);
-    expect(saved).toMatchObject({ collectedAt: '2024-03-11', labName: 'Test Lab', profileId: (await storage.getProfile()).id });
+    const me = await person('Arjun Mehta');
+    const saved = await storage.saveReport(me.id, report('2024-03-11'), [result(), result({ markerId: null, name: 'Homocysteine', unit: 'µmol/L' })]);
+    expect(saved).toMatchObject({ collectedAt: '2024-03-11', labName: 'Test Lab', profileId: me.id });
 
     const loaded = await storage.getReport(saved.id);
     expect(loaded?.report).toEqual(saved);
@@ -46,36 +53,61 @@ describe.each([
     expect(loaded?.results.every((r) => r.reportId === saved.id && r.id)).toBe(true);
   });
 
+  it('refuses to save a report for a missing profile', async () => {
+    storage = create();
+    await expect(storage.saveReport('nobody', report('2024-03-11'), [result()])).rejects.toThrow();
+    expect(await storage.listReports()).toEqual([]);
+  });
+
   it('lists reports newest collection date first', async () => {
     storage = create();
-    await storage.saveReport(report('2023-01-05'), []);
-    await storage.saveReport(report('2024-06-01'), []);
-    await storage.saveReport(report('2023-09-20'), []);
+    const me = await person('Arjun Mehta');
+    await storage.saveReport(me.id, report('2023-01-05'), []);
+    await storage.saveReport(me.id, report('2024-06-01'), []);
+    await storage.saveReport(me.id, report('2023-09-20'), []);
     expect((await storage.listReports()).map((r) => r.collectedAt)).toEqual(['2024-06-01', '2023-09-20', '2023-01-05']);
   });
 
-  it('filters results by marker across reports', async () => {
+  it('keeps each profile’s reports and results apart', async () => {
     storage = create();
-    await storage.saveReport(report('2023-01-05'), [result({ value: 12.9 }), result({ markerId: '3016-3', name: 'TSH' })]);
-    await storage.saveReport(report('2024-01-05'), [result({ value: 13.8 })]);
-    expect((await storage.listResults({ markerId: '718-7' })).map((r) => r.value).sort()).toEqual([12.9, 13.8]);
-    expect(await storage.listResults()).toHaveLength(3);
+    const a = await person('Arjun Mehta');
+    const b = await person('Priya Nair');
+    await storage.saveReport(a.id, report('2023-01-05'), [result({ value: 12.9 })]);
+    await storage.saveReport(b.id, report('2024-01-05'), [result({ value: 13.8 }), result({ markerId: '3016-3', name: 'TSH' })]);
+    expect((await storage.listReports({ profileId: a.id })).map((r) => r.collectedAt)).toEqual(['2023-01-05']);
+    expect((await storage.listResults({ profileId: b.id })).map((r) => r.value).sort()).toEqual([13.5, 13.8]);
+    expect((await storage.listResults({ profileId: b.id, markerId: '718-7' })).map((r) => r.value)).toEqual([13.8]);
+    expect(await storage.listResults({ markerId: '718-7' })).toHaveLength(2);
   });
 
   it('deletes a report together with its results', async () => {
     storage = create();
-    const keep = await storage.saveReport(report('2023-01-05'), [result()]);
-    const gone = await storage.saveReport(report('2024-01-05'), [result(), result()]);
+    const me = await person('Arjun Mehta');
+    const keep = await storage.saveReport(me.id, report('2023-01-05'), [result()]);
+    const gone = await storage.saveReport(me.id, report('2024-01-05'), [result(), result()]);
     await storage.deleteReport(gone.id);
     expect(await storage.getReport(gone.id)).toBeNull();
     expect((await storage.listResults()).every((r) => r.reportId === keep.id)).toBe(true);
   });
 
+  it('deletes a profile with its reports and results, leaving others', async () => {
+    storage = create();
+    const a = await person('Arjun Mehta');
+    const b = await person('Priya Nair');
+    await storage.saveReport(a.id, report('2023-01-05'), [result()]);
+    const kept = await storage.saveReport(b.id, report('2024-01-05'), [result()]);
+    await storage.deleteProfile(a.id);
+    expect((await storage.listReports()).map((r) => r.id)).toEqual([kept.id]);
+    expect((await storage.listResults()).every((r) => r.reportId === kept.id)).toBe(true);
+  });
+
   it('deletes everything', async () => {
     storage = create();
-    await storage.saveReport(report('2023-01-05'), [result()]);
+    const me = await person('Arjun Mehta');
+    await storage.saveReport(me.id, report('2023-01-05'), [result()]);
     await storage.deleteAll();
     storage = create();
+    expect(await storage.listProfiles()).toEqual([]);
     expect(await storage.listReports()).toEqual([]);
     expect(await storage.listResults()).toEqual([]);
   });
@@ -85,7 +117,7 @@ describe('persistent mode detection', () => {
   it('reports saved data only after the persistent backend is used', async () => {
     expect(await hasPersistentData()).toBe(false);
     const storage = createDexieStorage();
-    await storage.getProfile();
+    await storage.listProfiles();
     expect(await hasPersistentData()).toBe(true);
     await storage.deleteAll();
     expect(await hasPersistentData()).toBe(false);
@@ -93,7 +125,8 @@ describe('persistent mode detection', () => {
 
   it('the session backend never creates the database', async () => {
     const storage = createMemoryStorage();
-    await storage.saveReport(report('2024-01-05'), [result()]);
+    const me = await storage.createProfile({ name: 'Arjun Mehta', aliases: [], sex: null });
+    await storage.saveReport(me.id, report('2024-01-05'), [result()]);
     expect(await hasPersistentData()).toBe(false);
   });
 });

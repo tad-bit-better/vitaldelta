@@ -1,8 +1,21 @@
-import { detectReportDate, extractResults, groupRows, type DetectedDate, type ExtractedResult } from '@vitaldelta/extraction';
+import {
+  detectPatient,
+  detectReportDate,
+  extractResults,
+  groupRows,
+  type DetectedDate,
+  type DetectedPatient,
+  type ExtractedResult,
+} from '@vitaldelta/extraction';
 import { useState } from 'react';
 import { PdfNoTextError, PdfPasswordError, readPdf } from '../pdf/readPdf';
 
-export type Extracted = { fileName: string; results: ExtractedResult[]; detectedDate: DetectedDate | null };
+export type Extracted = {
+  fileName: string;
+  results: ExtractedResult[];
+  detectedDate: DetectedDate | null;
+  patient: DetectedPatient;
+};
 
 type Props = { onExtracted: (extracted: Extracted) => void; onCancel: () => void };
 
@@ -24,7 +37,7 @@ export default function Upload({ onExtracted, onCancel }: Props) {
         setError('We couldn’t find any lab results in this PDF. Is it a lab report?');
         return;
       }
-      onExtracted({ fileName: selected.name, results, detectedDate: detectReportDate(rows) });
+      onExtracted({ fileName: selected.name, results, detectedDate: detectReportDate(rows), patient: detectPatient(rows) });
     } catch (err) {
       if (err instanceof PdfPasswordError) {
         setNeedsPassword(true);

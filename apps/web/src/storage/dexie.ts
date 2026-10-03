@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie';
-import type { NewReport, NewResult, Profile, Report, Result, Storage } from './types';
+import type { NewProfile, NewReport, NewResult, Profile, Report, Result, Storage } from './types';
 
 export const DB_NAME = 'vitaldelta';
 
@@ -23,27 +23,56 @@ export function hasPersistentData(): Promise<boolean> {
   return Dexie.exists(DB_NAME);
 }
 
+/** Profiles saved before multi-patient support lack these fields. */
+const normalise = (p: Profile): Profile => ({ ...p, aliases: p.aliases ?? [], sex: p.sex ?? null });
+
+const byCollectedDesc = (a: Report, b: Report) => b.collectedAt.localeCompare(a.collectedAt) || b.createdAt.localeCompare(a.createdAt);
+
 /** Persistent backend: IndexedDB in this browser on this device. */
 export function createDexieStorage(): Storage {
   const db = new VitalDeltaDb();
 
-  const storage: Storage = {
+  const reportIdsOf = async (profileId: string) => (await db.reports.where('profileId').equals(profileId).primaryKeys()) as string[];
+
+  return {
     mode: 'persistent',
 
-    async getProfile() {
+    async listProfiles() {
+      const profiles = await db.profiles.toArray();
+      return profiles.map(normalise).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    },
+
+    async createProfile(input: NewProfile) {
+      const profile: Profile = { ...input, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
+      await db.profiles.add(profile);
+      return profile;
+    },
+
+    async updateProfile(id, changes) {
       return db.transaction('rw', db.profiles, async () => {
-        const existing = await db.profiles.toCollection().first();
-        if (existing) return existing;
-        const profile: Profile = { id: crypto.randomUUID(), name: 'Me', createdAt: new Date().toISOString() };
-        await db.profiles.add(profile);
-        return profile;
+        const existing = await db.profiles.get(id);
+        if (!existing) throw new Error(`No profile ${id}`);
+        const updated = { ...normalise(existing), ...changes };
+        await db.profiles.put(updated);
+        return updated;
       });
     },
 
-    async listReports() {
-      const reports = await db.reports.orderBy('collectedAt').reverse().toArray();
-      // Same date: newest saved first, matching the memory backend.
-      return reports.sort((a, b) => b.collectedAt.localeCompare(a.collectedAt) || b.createdAt.localeCompare(a.createdAt));
+    async deleteProfile(id) {
+      await db.transaction('rw', db.profiles, db.reports, db.results, async () => {
+        const ids = await reportIdsOf(id);
+        await db.results.where('reportId').anyOf(ids).delete();
+        await db.reports.bulkDelete(ids);
+        await db.profiles.delete(id);
+      });
+    },
+
+    async listReports(filter = {}) {
+      const reports =
+        filter.profileId === undefined
+          ? await db.reports.toArray()
+          : await db.reports.where('profileId').equals(filter.profileId).toArray();
+      return reports.sort(byCollectedDesc);
     },
 
     async getReport(id) {
@@ -52,10 +81,10 @@ export function createDexieStorage(): Storage {
       return { report, results: await db.results.where('reportId').equals(id).toArray() };
     },
 
-    async saveReport(input: NewReport, newResults: NewResult[]) {
-      const { id: profileId } = await storage.getProfile();
+    async saveReport(profileId, input: NewReport, newResults: NewResult[]) {
       const report: Report = { ...input, id: crypto.randomUUID(), profileId, createdAt: new Date().toISOString() };
-      await db.transaction('rw', db.reports, db.results, async () => {
+      await db.transaction('rw', db.profiles, db.reports, db.results, async () => {
+        if (!(await db.profiles.get(profileId))) throw new Error(`No profile ${profileId}`);
         await db.reports.add(report);
         await db.results.bulkAdd(newResults.map((r) => ({ ...r, id: crypto.randomUUID(), reportId: report.id })));
       });
@@ -70,13 +99,18 @@ export function createDexieStorage(): Storage {
     },
 
     async listResults(filter = {}) {
-      if (filter.markerId !== undefined) return db.results.where('markerId').equals(filter.markerId).toArray();
-      return db.results.toArray();
+      let results =
+        filter.profileId !== undefined
+          ? await db.results.where('reportId').anyOf(await reportIdsOf(filter.profileId)).toArray()
+          : filter.markerId !== undefined
+            ? await db.results.where('markerId').equals(filter.markerId).toArray()
+            : await db.results.toArray();
+      if (filter.markerId !== undefined) results = results.filter((r) => r.markerId === filter.markerId);
+      return results;
     },
 
     async deleteAll() {
       await db.delete();
     },
   };
-  return storage;
 }

@@ -39,7 +39,7 @@ because doctors often skim long reports and miss off values.
   and delete the downloaded PDF afterwards (the app can't remove it).
 
 ## v1 scope (10-day launch)
-Web app (PWA) at a public URL, PDF reports only, one profile, demo mode with synthetic
+Web app (PWA) at a public URL, PDF reports only, multiple patients (profiles), demo mode with synthetic
 sample reports, session-only mode for shared computers.
 Next (v1.1): optional passphrase encryption and auto-lock.
 Native mobile (React Native) is v2 and will reuse `packages/extraction`.
@@ -62,7 +62,8 @@ Native mobile (React Native) is v2 and will reuse `packages/extraction`.
 6. Prefer the reference range printed on the report over dictionary defaults
 
 ## Data model
-- `Profile` — one for v1
+- `Profile` — one per patient: id, name, aliases (names printed on their reports), sex.
+  The user always confirms which patient a report belongs to; names are only suggestions.
 - `Report` — id, profileId, collectedAt, labName, sourceFileName, createdAt
 - `Result` — id, reportId, markerId, value, unit, refLow, refHigh, confidence, userEdited
 - `Marker` — id (LOINC where possible), name, synonyms[], unit, plausibleMin/Max
