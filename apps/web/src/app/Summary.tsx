@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { forProfile, useAppData } from './DataContext';
 import { formatDate, formatNumber, formatPercent } from './format';
 import Link from './Link';
@@ -73,18 +72,6 @@ function SummaryTable({ caption, tests }: { caption: string; tests: TestSeries[]
 export default function Summary({ profileId }: { profileId: string }) {
   const data = useAppData();
   const profile = data.profiles.find((p) => p.id === profileId);
-  const name = profile?.name;
-
-  // Browsers name the saved PDF after the page title.
-  useEffect(() => {
-    if (!name) return;
-    const before = document.title;
-    document.title = `${name} - lab results summary`;
-    return () => {
-      document.title = before;
-    };
-  }, [name]);
-
   if (!profile) {
     return (
       <section className="app-card">

@@ -317,3 +317,13 @@ a.app-btn { display: inline-flex; align-items: center; text-decoration: none; }
   .summary-notes ul { font-size: 9.5pt; }
   .summary-foot { font-size: 8.5pt; }
 }
+
+/* Skip link: hidden until focused with the keyboard. */
+.app-skip { position: absolute; left: 12px; top: -48px; z-index: 10; padding: 8px 14px; border-radius: 8px; background: var(--accent); color: var(--on-accent); font-weight: 700; text-decoration: none; }
+.app-skip:focus { top: calc(8px + env(safe-area-inset-top, 0px)); }
+.app main h1:focus { outline: none; }
+.app-bar-end { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.app-demo { color: var(--accent); background: var(--card-alt); border-color: var(--line-strong); }
+.app-link-btn { font: inherit; color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.app-link-btn:disabled { color: var(--text-3); cursor: not-allowed; }
+.app-ios-note { font-size: 14px; color: var(--text); padding: 12px 14px; border: 1px solid var(--warn-line); background: var(--warn-bg); border-radius: 10px; }

@@ -64,7 +64,8 @@ what happens, why, and what to do.
   Chrome through upload → review → save in both storage modes, two patients, duplicate and
   mismatch checks, dashboard and test pages, and fails on any CSP violation, console error or
   request to another host. It also covers the doctor summary (including the print view) and
-  backup download → delete all → restore. Run it before pushing UI changes. `BASE=https://vitaldelta.app
+  backup download → delete all → restore, the demo, axe accessibility checks on every screen,
+  and offline use (it stops the server and reloads). Run it before pushing UI changes. `BASE=https://vitaldelta.app
   node apps/web/e2e/run.mjs` checks a deployment. Needs Chrome (`CHROME=` to point at it).
 
 - **pnpm doesn't reliably run `pre*`/`post*` scripts.** Chain steps explicitly
@@ -154,9 +155,45 @@ what happens, why, and what to do.
   PDF export, so no PDF library is needed. The `@media print` block in `app.css` hides
   everything but the summary and switches to black on white with darker status colours.
   Status keeps its icon and label because many printers are black and white.
-- **The summary sets `document.title`** while open, because browsers name the saved PDF after it.
+- **The summary's page title is the PDF's file name** (browsers name the saved PDF after it). It's set
+  in `pageTitle` in `AppShell.tsx`, like every page's title.
 - **Check print layout with `SHOTS=dir pnpm e2e`**, which also saves `summary.pdf` (Chrome's
   print engine). `pnpm dev` won't show print problems unless you open the print preview.
+
+## Offline (service worker)
+
+- **The service worker is hand-written** (`apps/web/sw/sw.js`); a small plugin in
+  `vite.config.ts` fills in the list of files and a version hash and emits `/sw.js`. It caches
+  every built file, the icons, manifest and pdf.js standard fonts (needed to read PDFs that
+  use non-embedded fonts like Helvetica). pdf.js character maps are cached the first time
+  they're used. It only exists in production builds: `pnpm dev` never has it.
+- **The plugin runs with `enforce: 'post'`**, otherwise `index.html` isn't in the bundle yet.
+- **The page is cached as `/`, not `/index.html`**: some servers redirect `/index.html`, and
+  browsers refuse a redirected response for a page load.
+- **Cache lookups use `ignoreVary`.** Module scripts are requested with an Origin header; the
+  copies cached at install have none, so with `Vary: Origin` they never matched offline.
+- **Page loads are network-first** (a deploy shows up at once), files are cache-first, and a
+  new worker takes over immediately (`skipWaiting`) and deletes old caches.
+- **`/sw.js` is served with `Cache-Control: no-cache`** (vercel.json) so updates are found.
+  `vite preview` copies only the site-wide `/(.*)` headers from vercel.json.
+- **A stuck old version in your browser**: DevTools → Application → Service workers →
+  Unregister, or Your data → Delete all data (which also removes caches and the worker).
+
+## Demo and onboarding
+
+- **Demo data is made up** (`apps/web/src/demo/`) and loads into the in-memory backend through
+  `importBackup`, so the demo never touches IndexedDB. `/app?demo=1` starts it (the landing
+  page links there). "Use a made-up sample report" builds a PDF in the browser and runs the
+  real extraction; `demo.test.ts` fails if extraction stops reading it.
+- **iPhone/iPad note** (`IosNote`) shows only in Safari when not opened from the home screen.
+  The Install button only appears where the browser offers installing (Chrome, Edge, Android).
+
+## Accessibility
+
+- **AppShell sets each page's title and moves focus to the page's `<h1>`** after navigation,
+  so screen readers announce the new page. Every page needs exactly one `<h1>`.
+- **`pnpm e2e` runs axe-core on every screen** and fails on serious or critical problems.
+- **Focusable SVG elements need a role** (chart points use `role="img"` with an `aria-label`).
 
 ## Extraction
 

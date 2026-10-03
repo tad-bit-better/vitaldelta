@@ -1,9 +1,10 @@
 import type { StorageMode } from '../storage/types';
+import IosNote from './IosNote';
 
-type Props = { onChoose: (mode: StorageMode) => void };
+type Props = { onChoose: (mode: StorageMode) => void; onDemo: () => void };
 
-/** First-use choice between saving on this device and a session that leaves nothing behind. */
-export default function StorageChoice({ onChoose }: Props) {
+/** First-use choice between saving on this device and a session that leaves nothing behind, or a demo. */
+export default function StorageChoice({ onChoose, onDemo }: Props) {
   return (
     <section className="app-card app-choice">
       <h1>Where should your results live?</h1>
@@ -20,12 +21,25 @@ export default function StorageChoice({ onChoose }: Props) {
           <span>Nothing is written to disk. Closing this tab erases everything.</span>
         </button>
       </div>
+      <p className="app-muted">
+        Just looking?{' '}
+        <button type="button" className="app-link-btn" onClick={onDemo}>
+          Try it with made-up sample reports
+        </button>
+        .
+      </p>
+      <IosNote />
       <p className="app-note">
         On a shared or public computer, choose <strong>Just this session</strong> or use a private window, and
         delete the downloaded PDF afterwards. This app can't remove files from your downloads.
       </p>
       <p className="app-note">
-        Saved data belongs to this browser on this device. It won't appear on your phone or in another browser.
+        Saved data belongs to this browser on this device. It won't appear on your phone or in another browser; use a
+        backup file (under Your data) to move it.
+      </p>
+      <p className="app-note">
+        VitalDelta shows what your reports say and how values changed. It isn’t medical advice; talk to your doctor
+        about what your results mean.
       </p>
     </section>
   );

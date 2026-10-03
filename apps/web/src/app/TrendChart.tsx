@@ -176,6 +176,7 @@ export default function TrendChart({ name, unit, points }: Props) {
           <g
             key={p.resultId}
             className="chart-point"
+            role="img"
             tabIndex={0}
             aria-label={`${formatDate(p.date)}: ${p.comparator ?? ''}${formatNumber(p.value)} ${unit ?? ''}. ${describeStatus(p)}.`}
             onFocus={() => setActive(i)}

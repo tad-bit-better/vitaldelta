@@ -10,6 +10,7 @@
 // Exits non-zero if any check fails.
 import { spawn } from 'node:child_process';
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -75,14 +76,22 @@ for (const [file, report] of Object.entries(REPORTS)) writePdf(file, report);
 
 // ---------- Servers and browser ----------
 
+// Own process group, so stopping it (for the offline test) also stops the server npx starts.
 const preview = local
-  ? spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], { cwd: new URL('..', import.meta.url).pathname, stdio: 'ignore' })
+  ? spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], { cwd: new URL('..', import.meta.url).pathname, stdio: 'ignore', detached: true })
   : null;
+const stopPreview = () => {
+  try {
+    if (preview) process.kill(-preview.pid);
+  } catch {
+    // Already stopped.
+  }
+};
 const chrome = spawn(CHROME, ['--headless=new', '--remote-debugging-port=9333', `--user-data-dir=${join(work, 'chrome')}`, '--no-first-run', 'about:blank'], { stdio: 'ignore' });
 const cleanup = async () => {
   const exited = new Promise((r) => chrome.once('exit', r));
   chrome.kill();
-  preview?.kill();
+  stopPreview();
   await Promise.race([exited, sleep(3000)]);
   rmSync(work, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
 };
@@ -152,10 +161,12 @@ const saveBar = () => text('.app-savebar-status');
 const saveEnabled = () => evaluate(`![...document.querySelectorAll('button')].find((b) => b.innerText.startsWith('Save ')).disabled`);
 
 /** Uploads a report; `beforeReview` runs while low-confidence rows are still pending. */
-async function addReport(file, beforeReview = async () => {}) {
+const addReport = (file, beforeReview) => addReportWith(() => upload(file), beforeReview);
+
+async function addReportWith(pick, beforeReview = async () => {}) {
   await click('+ Add a report') || (await click('Add a report'));
   await waitFor(`!!document.querySelector('input[type=file]')`, 'upload screen');
-  await upload(file);
+  await pick();
   await waitForText('Who is this report for?');
   await beforeReview();
   while (await click('Looks right')) await sleep(30);
@@ -173,6 +184,23 @@ async function shot(name, width = 1280) {
   await send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false });
 }
 
+// axe-core accessibility checks; fails on serious or critical problems.
+const axeSource = readFileSync(createRequire(import.meta.url).resolve('axe-core/axe.min.js'), 'utf8');
+async function a11y(label) {
+  if (!(await evaluate(`typeof axe !== 'undefined'`))) await evaluate(axeSource);
+  const found = await evaluate(`axe.run(document, { resultTypes: ['violations'] }).then((r) => r.violations
+    .filter((v) => v.impact === 'serious' || v.impact === 'critical')
+    .map((v) => v.id + ': ' + v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(', ')))`);
+  check(Array.isArray(found) && found.length === 0, `${label}: no serious accessibility problems${found?.length ? `:\n    ${found.join('\n    ')}` : ''}`);
+}
+
+/** With SHOTS=dir, saves a full-page screenshot. */
+async function fullShot(name) {
+  if (!process.env.SHOTS) return;
+  const shot = (await send('Page.captureScreenshot', { captureBeyondViewport: true })).result;
+  writeFileSync(join(process.env.SHOTS, `${name}.png`), Buffer.from(shot.data, 'base64'));
+}
+
 async function save() {
   await click('Save ');
   await waitForText('Report saved.');
@@ -183,6 +211,30 @@ await send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 900, dev
 
 try {
   // ---------- Session mode: nothing on disk ----------
+  // ---------- Demo ----------
+  console.log('\nDemo');
+  await goto('/');
+  await a11y('landing page');
+  await goto('/app?demo=1');
+  await waitForText('Asha Rao (sample)');
+  check((await evaluate(`document.querySelectorAll('.app-patient').length`)) === 2, 'demo opens with two sample patients');
+  check((await text('.app-content h1')) === 'Asha Rao (sample)' && (await evaluate('document.title')) === 'Asha Rao (sample) · VitalDelta', 'demo shows the first sample dashboard, with a page title');
+  await a11y('dashboard');
+  await fullShot('demo');
+  await addReportWith(() => click('Use a made-up sample report'));
+  const options = (await text('.app-patient-options')) ?? '';
+  check(/^Asha Rao \(sample\)[^]*?Suggested[^]*Vikram/.test(options), 'sample report reads through the real pipeline and suggests its patient');
+  await a11y('review');
+  await pickPatient('Asha Rao (sample)');
+  await save();
+  check((await text('.app-patient[aria-current="page"]'))?.includes('5 reports'), 'sample report saved in the demo');
+  check(await evaluate(`document.activeElement === document.querySelector('main h1')`), 'focus moves to the new page’s heading');
+  await click('Exit demo');
+  await waitForText('Where should your results live?');
+  check((await evaluate(`indexedDB.databases().then((d) => d.length)`)) === 0, 'demo wrote nothing to disk');
+  await a11y('first screen');
+  await fullShot('first-screen');
+
   console.log('\nSession mode');
   await goto('/app');
   await waitForText('Where should your results live?');
@@ -244,6 +296,7 @@ try {
   await shot('list');
   await evaluate(`[...document.querySelectorAll('.app-test')].find((a) => a.innerText.startsWith('Haemoglobin')).click()`);
   await waitFor(`!!document.querySelector('.chart svg')`, 'trend chart');
+  await a11y('test page');
   await evaluate('history.back()');
   await sleep(600);
   check((await layout()) === 'list', 'list layout kept after opening a test and going back');
@@ -272,6 +325,7 @@ try {
   console.log('\nDoctor summary');
   await clickLink('Doctor summary');
   await waitFor(`!!document.querySelector('.summary-table')`, 'summary table');
+  await a11y('doctor summary');
   const captions = await evaluate(`[...document.querySelectorAll('.summary-table caption')].map((c) => c.innerText)`);
   check(captions[0]?.startsWith('Outside or near the range (3)') && captions[1]?.startsWith('Other tests'), 'attention table first, then other tests');
   const firstTable = await text('.summary-table');
@@ -328,6 +382,28 @@ try {
       writeFileSync(join(process.env.SHOTS, 'data.png'), Buffer.from(shot.data, 'base64'));
     }
     check(await evaluate(`[...document.querySelectorAll('button')].find((b) => b.innerText === 'Restore').disabled`), 'restoring the same backup twice adds nothing');
+    await a11y('your data');
+  }
+
+  // ---------- Offline ----------
+  if (local) {
+    console.log('\nOffline');
+    await goto('/app');
+    check(
+      await waitFor(
+        `navigator.serviceWorker.ready.then(() => !!navigator.serviceWorker.controller && caches.keys()).then((k) => k && k.some((n) => /^vitaldelta-[0-9a-f]{12}$/.test(n)))`,
+        'service worker',
+      ),
+      'service worker installed and controls the page',
+    );
+    stopPreview();
+    await sleep(500);
+    check(await fetch(base).then(() => false, () => true), 'server stopped');
+    await goto('/app');
+    check(await waitForText('Arjun Mehta'), 'app opens offline with saved data');
+    await addReport('r1.pdf');
+    check(Boolean(await text('.app-patient-options')), 'a PDF is read offline');
+    await click('Discard');
   }
 
   // ---------- Privacy ----------

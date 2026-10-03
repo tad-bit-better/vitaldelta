@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { BackupError, backupFileName, createBackup, deleteEverything, parseBackup, type Backup } from '../storage';
 import { useAppData } from './DataContext';
+import IosNote from './IosNote';
 import { useStorage } from './StorageContext';
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
@@ -28,6 +29,12 @@ export default function DataPage({ onDeletedAll }: { onDeletedAll: () => void })
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, setBusy] = useState(false);
   const empty = data.profiles.length === 0;
+  // Whether the browser agreed to navigator.storage.persist() (asked when saving was chosen).
+  const [persisted, setPersisted] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (session) return;
+    navigator.storage?.persisted?.().then(setPersisted, () => setPersisted(null));
+  }, [session]);
 
   async function pick(file: File | undefined) {
     setPicked(null);
@@ -85,6 +92,14 @@ export default function DataPage({ onDeletedAll }: { onDeletedAll: () => void })
           {plural(data.results.length, 'result')}.
         </p>
       </div>
+      {persisted !== null && (
+        <p className="app-note">
+          {persisted
+            ? 'Your browser has agreed to keep this data until you delete it.'
+            : 'Your browser may clear this data if the device runs low on space. Installing the app makes that less likely; keep a backup to be safe.'}
+        </p>
+      )}
+      {!session && <IosNote />}
       {message && <p className="app-notice" role="status">{message}</p>}
 
       <div className="app-group app-data-section">
