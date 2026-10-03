@@ -9,7 +9,7 @@
 //
 // Exits non-zero if any check fails.
 import { spawn } from 'node:child_process';
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -144,6 +144,8 @@ const upload = async (file) => {
   const { result: { nodeId } } = await send('DOM.querySelector', { nodeId: root.nodeId, selector: 'input[type=file]' });
   await send('DOM.setFileInputFiles', { nodeId, files: [join(work, file)] });
 };
+const clickLink = (label) =>
+  evaluate(`(() => { const a = [...document.querySelectorAll('a')].find((a) => a.innerText.trim().startsWith(${JSON.stringify(label)})); a?.click(); return !!a; })()`);
 const pickPatient = (name) =>
   evaluate(`(() => { const o = [...document.querySelectorAll('.app-patient-options .app-option-row')].find((o) => o.innerText.includes(${JSON.stringify(name)})); o?.querySelector('input').click(); return !!o; })()`);
 const saveBar = () => text('.app-savebar-status');
@@ -253,6 +255,68 @@ try {
   await evaluate('history.back()');
   await sleep(600);
   check((await text('.app-content h1')) === 'Arjun Mehta', 'back button returns to the patient');
+
+  // ---------- Doctor summary ----------
+  console.log('\nDoctor summary');
+  await clickLink('Doctor summary');
+  await waitFor(`!!document.querySelector('.summary-table')`, 'summary table');
+  const captions = await evaluate(`[...document.querySelectorAll('.summary-table caption')].map((c) => c.innerText)`);
+  check(captions[0]?.startsWith('Outside or near the report’s range (3)') && captions[1]?.startsWith('Other tests'), 'attention table first, then other tests');
+  const firstTable = await text('.summary-table');
+  check(firstTable?.includes('Total cholesterol') && firstTable.includes('+20%') && firstTable.includes('▲ Above range'), 'summary rows show value, change and status label');
+  check((await text('.summary-notes'))?.includes('Haemoglobin: falling across the last 3 results'), 'summary lists steady trends');
+  if (process.env.SHOTS) {
+    const { data } = (await send('Page.printToPDF', { preferCSSPageSize: true })).result;
+    writeFileSync(join(process.env.SHOTS, 'summary.pdf'), Buffer.from(data, 'base64'));
+    const shot = (await send('Page.captureScreenshot', { captureBeyondViewport: true })).result;
+    writeFileSync(join(process.env.SHOTS, 'summary.png'), Buffer.from(shot.data, 'base64'));
+  }
+  await send('Emulation.setEmulatedMedia', { media: 'print' });
+  check(
+    await evaluate(`getComputedStyle(document.querySelector('.app-sidebar')).display === 'none' && getComputedStyle(document.querySelector('.summary-actions')).display === 'none' && getComputedStyle(document.body).backgroundColor !== 'rgb(6, 17, 12)'`),
+    'print view shows only the summary',
+  );
+  await send('Emulation.setEmulatedMedia', { media: '' });
+
+  // ---------- Backup, delete all, restore ----------
+  console.log('\nYour data');
+  const downloads = join(work, 'downloads');
+  await send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: downloads });
+  await clickLink('Your data');
+  await waitForText('Download backup');
+  await click('Download backup');
+  const backupFile = await (async () => {
+    for (let i = 0; i < 50; i++, await sleep(100)) {
+      const f = existsSync(downloads) && readdirSync(downloads).find((n) => /^vitaldelta-backup-\d{4}-\d{2}-\d{2}\.json$/.test(n));
+      if (f) return join(downloads, f);
+    }
+    return null;
+  })();
+  const backup = backupFile && JSON.parse(readFileSync(backupFile, 'utf8'));
+  check(backup?.profiles.length === 2 && backup.reports.length === 4, 'backup downloads with both patients and all reports');
+  await click('Delete all data');
+  await click('Delete everything');
+  await waitForText('Where should your results live?');
+  check((await text('.app-choice-notice')) === 'All data deleted.', 'delete all returns to the first screen');
+  check((await evaluate(`indexedDB.databases().then((d) => d.length)`)) === 0, 'delete all removed the database');
+  await click('Save on this device');
+  await waitForText('No reports yet');
+  await clickLink('Your data');
+  await waitForText('Backup file');
+  if (backupFile) {
+    await upload(backupFile.slice(work.length + 1));
+    await waitForText('Will add 2 patients and 4 reports');
+    await click('Restore');
+    await waitForText('Restored 2 patients');
+    check((await evaluate(`document.querySelectorAll('.app-patient').length`)) === 2, 'restore brings both patients back');
+    await upload(backupFile.slice(work.length + 1));
+    await waitForText('All of it is already here.');
+    if (process.env.SHOTS) {
+      const shot = (await send('Page.captureScreenshot', { captureBeyondViewport: true })).result;
+      writeFileSync(join(process.env.SHOTS, 'data.png'), Buffer.from(shot.data, 'base64'));
+    }
+    check(await evaluate(`[...document.querySelectorAll('button')].find((b) => b.innerText === 'Restore').disabled`), 'restoring the same backup twice adds nothing');
+  }
 
   // ---------- Privacy ----------
   console.log('\nPrivacy');

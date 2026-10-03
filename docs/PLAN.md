@@ -13,13 +13,13 @@ Done when: live at a public URL with demo mode, linked from the resume.
 - [x] Day 6: Out-of-range/borderline flags; marker detail page with trend chart and reference band
 - [x] Day 7: Dashboard: flagged first, sparklines, changed since last report, drift
 - [x] Day 7 (added): Multiple patients: sidebar, patient confirmed on every report (name/sex suggestions and mismatch warnings), duplicate-report check, rename/delete patient
-- [ ] Day 8: Doctor summary with print stylesheet (save as PDF); JSON backup export/import; Delete all data (IndexedDB, caches, service worker)
+- [x] Day 8: Doctor summary with print stylesheet (save as PDF); JSON backup export/import; Delete all data (IndexedDB, caches, service worker)
 - [ ] Day 9: Demo mode with synthetic reports; PWA + offline; `navigator.storage.persist()`; onboarding (storage choice, shared-computer note, data is per-browser, iPhone install nudge, not-medical-advice); accessibility
 - [ ] Day 10: README with architecture diagram + demo GIF (mention the CSP privacy guarantee), custom subdomain, LinkedIn post, add to resume
 
 ## Open items
 Things decided or found in conversation that aren't done yet.
-- [ ] Day 8 is next: doctor summary with print stylesheet (save as PDF), JSON backup export/import, Delete all data
+- [ ] Day 9 is next: demo mode, PWA + offline, storage.persist(), onboarding, accessibility. Delete all data already clears caches and service workers, so it covers the PWA once added
 - [ ] Verify the 71 LOINC codes against loinc.org (written from memory; only check digits are tested). In particular 1989-3 (Vitamin D: D3 only or total?)
 - [ ] Verify unit conversion factors against a published SI table (AMA Manual of Style); have someone medical review plausibility bounds
 - [ ] MPV and PDW print "%" on the owner's lab report; confirm under "Raw rows" on /dev/rows whether the lab really prints % (then they stay unrecognised) or the parser picked the wrong token

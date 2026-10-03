@@ -1,4 +1,5 @@
 import type { Comparator, Sex } from '@vitaldelta/extraction';
+import type { Backup, ImportCounts } from './backup';
 
 export type StorageMode = 'persistent' | 'session';
 
@@ -69,6 +70,11 @@ export interface Storage {
   saveReport(profileId: string, report: NewReport, results: NewResult[]): Promise<Report>;
   deleteReport(id: string): Promise<void>;
   listResults(filter?: { markerId?: string; profileId?: string }): Promise<Result[]>;
+  /**
+   * Adds a backup's patients, reports and results, all or nothing. Anything whose id is
+   * already here is left as it is (so restoring the same backup twice changes nothing).
+   */
+  importBackup(backup: Backup): Promise<ImportCounts>;
   /** Removes every report, result and profile from this backend. */
   deleteAll(): Promise<void>;
 }

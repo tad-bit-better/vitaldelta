@@ -2,12 +2,14 @@ import { useCallback, useEffect, useState } from 'react';
 import { createDexieStorage, createMemoryStorage, hasPersistentData, type Profile, type Report, type Result, type Storage, type StorageMode } from '../storage';
 import './app.css';
 import { DataContext, type AppData } from './DataContext';
+import DataPage from './DataPage';
 import Link from './Link';
 import PatientDashboard from './PatientDashboard';
 import Review from './Review';
 import { navigate, parseRoute, patientPath, usePath } from './router';
 import Sidebar from './Sidebar';
 import StorageChoice from './StorageChoice';
+import Summary from './Summary';
 import { StorageContext } from './StorageContext';
 import TestDetail from './TestDetail';
 import Upload, { type Extracted } from './Upload';
@@ -68,7 +70,15 @@ export default function AppShell() {
   }, [route.name, firstProfile]);
 
   const data: AppData | null = loaded && { ...loaded, reload };
-  const activeId = route.name === 'patient' || route.name === 'test' ? route.profileId : null;
+  const activeId = route.name === 'patient' || route.name === 'test' || route.name === 'summary' ? route.profileId : null;
+  // After Delete all data: back to the first-use choice, with nothing left in memory either.
+  const deletedAll = () => {
+    setStorage(null);
+    setLoaded(null);
+    setExtracted(null);
+    setNotice('All data deleted.');
+    navigate('/app', { replace: true });
+  };
   const leaveAdd = (to: string, message: string | null = null) => {
     setExtracted(null);
     setNotice(message);
@@ -86,12 +96,20 @@ export default function AppShell() {
 
       <main className="app-main">
         {checking ? null : !storage ? (
-          <StorageChoice onChoose={(mode) => setStorage(open(mode))} />
+          <>
+            {notice && <p className="app-notice app-choice-notice" role="status">{notice}</p>}
+            <StorageChoice
+              onChoose={(mode) => {
+                setNotice(null);
+                setStorage(open(mode));
+              }}
+            />
+          </>
         ) : !data ? null : (
           <StorageContext.Provider value={storage}>
             <DataContext.Provider value={data}>
               <div className="app-layout">
-                <Sidebar activeId={activeId} />
+                <Sidebar activeId={activeId} dataActive={route.name === 'data'} />
                 <div className="app-content">
                   {route.name === 'add' ? (
                     extracted ? (
@@ -103,6 +121,10 @@ export default function AppShell() {
                     ) : (
                       <Upload onExtracted={setExtracted} onCancel={() => leaveAdd('/app')} />
                     )
+                  ) : route.name === 'data' ? (
+                    <DataPage onDeletedAll={deletedAll} />
+                  ) : route.name === 'summary' ? (
+                    <Summary profileId={route.profileId} />
                   ) : route.name === 'test' ? (
                     <TestDetail profileId={route.profileId} testKey={route.testKey} />
                   ) : route.name === 'patient' ? (

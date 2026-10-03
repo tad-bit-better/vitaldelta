@@ -67,6 +67,20 @@ export function createMemoryStorage(): Storage {
       );
     },
 
+    async importBackup(backup) {
+      const has = (list: { id: string }[]) => new Set(list.map((i) => i.id));
+      const [profileIds, reportIds, resultIds] = [has(profiles), has(reports), has(results)];
+      const newProfiles = backup.profiles.filter((p) => !profileIds.has(p.id));
+      const newReports = backup.reports.filter((r) => !reportIds.has(r.id));
+      // Results only come with a report that's new here; an existing report keeps its own results.
+      const newReportIds = has(newReports);
+      const newResults = backup.results.filter((r) => newReportIds.has(r.reportId) && !resultIds.has(r.id));
+      profiles = [...profiles, ...newProfiles].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+      reports = [...reports, ...newReports];
+      results = [...results, ...newResults];
+      return { profiles: newProfiles.length, reports: newReports.length, results: newResults.length };
+    },
+
     async deleteAll() {
       profiles = [];
       reports = [];

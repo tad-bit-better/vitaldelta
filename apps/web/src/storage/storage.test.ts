@@ -2,6 +2,7 @@ import 'fake-indexeddb/auto';
 import { afterEach, describe, expect, it } from 'vitest';
 import { createDexieStorage, hasPersistentData } from './dexie';
 import { createMemoryStorage } from './memory';
+import { createBackup, parseBackup } from './backup';
 import type { NewResult, Storage } from './types';
 
 // Synthetic data only.
@@ -99,6 +100,36 @@ describe.each([
     await storage.deleteProfile(a.id);
     expect((await storage.listReports()).map((r) => r.id)).toEqual([kept.id]);
     expect((await storage.listResults()).every((r) => r.reportId === kept.id)).toBe(true);
+  });
+
+  it('round-trips a backup into an empty backend, keeping ids', async () => {
+    storage = create();
+    const a = await person('Arjun Mehta');
+    const b = await person('Priya Nair');
+    await storage.saveReport(a.id, report('2023-01-05'), [result(), result({ markerId: null, name: 'Homocysteine', unit: 'µmol/L' })]);
+    await storage.saveReport(b.id, report('2024-01-05'), [result({ value: 12.1 })]);
+    const backup = parseBackup(JSON.stringify(await createBackup(storage)));
+    await storage.deleteAll();
+
+    storage = create();
+    expect(await storage.importBackup(backup)).toEqual({ profiles: 2, reports: 2, results: 3 });
+    expect(await createBackup(storage, new Date(backup.exportedAt))).toEqual(backup);
+  });
+
+  it('restoring adds only what is missing, and twice changes nothing', async () => {
+    storage = create();
+    const me = await person('Arjun Mehta');
+    const kept = await storage.saveReport(me.id, report('2023-01-05'), [result()]);
+    const backup = await createBackup(storage);
+    const extra = await storage.saveReport(me.id, report('2024-01-05'), [result({ value: 12 })]);
+    await storage.deleteReport(kept.id);
+    await storage.updateProfile(me.id, { name: 'Me' });
+
+    expect(await storage.importBackup(backup)).toEqual({ profiles: 0, reports: 1, results: 1 });
+    expect(await storage.importBackup(backup)).toEqual({ profiles: 0, reports: 0, results: 0 });
+    expect((await storage.listReports()).map((r) => r.id).sort()).toEqual([kept.id, extra.id].sort());
+    expect((await storage.listProfiles()).map((p) => p.name)).toEqual(['Me']);
+    expect(await storage.listResults()).toHaveLength(2);
   });
 
   it('deletes everything', async () => {

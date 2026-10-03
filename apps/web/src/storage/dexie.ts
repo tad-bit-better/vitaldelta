@@ -109,6 +109,23 @@ export function createDexieStorage(): Storage {
       return results;
     },
 
+    async importBackup(backup) {
+      return db.transaction('rw', db.profiles, db.reports, db.results, async () => {
+        // Keeps the items bulkGet didn't find (results come back in the same order as the ids).
+        const missing = <T>(items: T[], existing: unknown[]) => items.filter((_, i) => existing[i] === undefined);
+        const profiles = missing(backup.profiles, await db.profiles.bulkGet(backup.profiles.map((p) => p.id)));
+        const reports = missing(backup.reports, await db.reports.bulkGet(backup.reports.map((r) => r.id)));
+        // Results only come with a report that's new here; an existing report keeps its own results.
+        const newReportIds = new Set(reports.map((r) => r.id));
+        const candidates = backup.results.filter((r) => newReportIds.has(r.reportId));
+        const results = missing(candidates, await db.results.bulkGet(candidates.map((r) => r.id)));
+        await db.profiles.bulkAdd(profiles);
+        await db.reports.bulkAdd(reports);
+        await db.results.bulkAdd(results);
+        return { profiles: profiles.length, reports: reports.length, results: results.length };
+      });
+    },
+
     async deleteAll() {
       await db.delete();
     },

@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { forProfile, useAppData } from './DataContext';
 import { formatDate } from './format';
 import Highlights from './Highlights';
-import { navigate } from './router';
+import Link from './Link';
+import { navigate, summaryPath } from './router';
 import { buildSeries, sinceLastReport } from './series';
 import { useStorage } from './StorageContext';
 import TestList from './TestList';
@@ -60,6 +61,11 @@ export default function PatientDashboard({ profileId, notice }: { profileId: str
         )}
         {renaming === null && (
           <div className="app-row">
+            {tests.length > 0 && (
+              <Link to={summaryPath(profile.id)} className="app-btn app-btn-sm app-btn-primary">
+                Doctor summary
+              </Link>
+            )}
             <button type="button" className="app-btn app-btn-sm" onClick={() => setRenaming(profile.name)}>Rename</button>
             <button type="button" className="app-btn app-btn-sm" onClick={() => setConfirmDeletePatient(true)}>
               Delete patient

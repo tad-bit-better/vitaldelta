@@ -28,18 +28,25 @@ export function usePath(): string {
 export const patientPath = (profileId: string) => `/app/p/${encodeURIComponent(profileId)}`;
 export const testPath = (profileId: string, key: string) => `${patientPath(profileId)}/tests/${encodeURIComponent(key)}`;
 
+export const summaryPath = (profileId: string) => `${patientPath(profileId)}/summary`;
+export const DATA_PATH = '/app/data';
+
 export type Route =
   | { name: 'home' }
   | { name: 'add' }
+  | { name: 'data' }
   | { name: 'patient'; profileId: string }
+  | { name: 'summary'; profileId: string }
   | { name: 'test'; profileId: string; testKey: string };
 
-/** /app, /app/add, /app/p/<id>, /app/p/<id>/tests/<key>; anything else is home. */
+/** /app, /app/add, /app/data, /app/p/<id>, /app/p/<id>/summary, /app/p/<id>/tests/<key>; anything else is home. */
 export function parseRoute(path: string): Route {
   const parts = path.replace(/\/+$/, '').split('/').slice(2).map(decodeURIComponent);
   if (parts[0] === 'add' && parts.length === 1) return { name: 'add' };
+  if (parts[0] === 'data' && parts.length === 1) return { name: 'data' };
   if (parts[0] === 'p' && parts[1]) {
     if (parts.length === 2) return { name: 'patient', profileId: parts[1] };
+    if (parts[2] === 'summary' && parts.length === 3) return { name: 'summary', profileId: parts[1] };
     if (parts[2] === 'tests' && parts[3] && parts.length === 4) return { name: 'test', profileId: parts[1], testKey: parts[3] };
   }
   return { name: 'home' };

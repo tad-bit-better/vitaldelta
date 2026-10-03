@@ -265,3 +265,55 @@ span.app-spark { width: 88px; }
   box-shadow: 0 8px 24px rgba(0, 0, 0, .4); pointer-events: none; }
 .chart-tooltip-left { transform: translateX(calc(-100% - 12px)); }
 .chart-tooltip strong { font-size: 16px; color: var(--text); }
+
+a.app-btn { display: inline-flex; align-items: center; text-decoration: none; }
+.app-sidebar-data { margin-top: 4px; padding: 10px 12px; border-top: 1px solid var(--line); font-size: 14px; color: var(--text-2); text-decoration: none; }
+.app-sidebar-data:hover, .app-sidebar-data[aria-current="page"] { color: var(--text); }
+@media (max-width: 860px) {
+  .app-sidebar-data { order: 3; flex: 1 1 100%; margin: 0; padding: 4px 2px 0; border: 0; }
+}
+.app-choice-notice { max-width: 680px; margin: 0 auto 16px; }
+
+/* Your data */
+.app-data-section { padding-top: 18px; border-top: 1px solid var(--line); }
+.app-data-section .app-field { flex: none; max-width: 420px; }
+.app-data-preview { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border: 1px solid var(--line-strong); border-radius: 12px; }
+
+/* Doctor summary: compact on screen, and the only thing printed. */
+.summary-actions { justify-content: space-between; align-items: center; }
+.summary-head { display: flex; flex-direction: column; gap: 4px; }
+.summary-kicker { font-size: 13px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-3); }
+.summary-table caption { caption-side: top; text-align: left; padding: 0 0 8px; font-family: var(--font-display); font-weight: 700; font-size: 18px; color: var(--text); }
+.summary-table th[scope="row"] { text-align: left; font-weight: 600; color: var(--text); white-space: normal; border-bottom-color: var(--line); }
+.summary-table td, .summary-table th { padding: 7px 10px; }
+.summary-num { font-variant-numeric: tabular-nums; }
+.summary-notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.summary-notes h2 { margin: 0 0 6px; font-size: 16px; }
+.summary-notes ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
+.summary-foot { padding-top: 12px; border-top: 1px solid var(--line); font-size: 12px; color: var(--text-3); }
+
+@page { margin: 12mm; }
+@media print {
+  /* Black on white with the status icons and labels doing the work (colour may not print). */
+  html { background: #fff; }
+  .app {
+    --bg: #fff; --card: #fff; --card-alt: #fff; --line: #ccc; --line-strong: #888;
+    --text: #000; --text-2: #333; --text-3: #555;
+    --status-ok: #1a6b3c; --status-near: #8a5300; --status-out: #b0002a; --status-none: #555;
+    min-height: 0; font-size: 11pt;
+    print-color-adjust: exact; -webkit-print-color-adjust: exact;
+  }
+  .app-bar, .app-sidebar, .app-footer, .summary-actions { display: none !important; }
+  .app-main { max-width: none; padding: 0; }
+  .app-layout { display: block; }
+  .app-card.summary { border: 0; padding: 0; gap: 12px; border-radius: 0; }
+  .summary h1 { font-size: 20pt; }
+  .app-table-wrap { overflow: visible; }
+  .summary-table { font-size: 9.5pt; }
+  .summary-table td, .summary-table th { padding: 4px 6px; }
+  .summary-table caption { font-size: 12pt; }
+  .summary-table tr { break-inside: avoid; }
+  .summary-notes { grid-template-columns: 1fr 1fr; }
+  .summary-notes ul { font-size: 9.5pt; }
+  .summary-foot { font-size: 8.5pt; }
+}

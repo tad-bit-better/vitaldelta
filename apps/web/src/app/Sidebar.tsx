@@ -1,11 +1,11 @@
 import { forProfile, useAppData } from './DataContext';
 import Link from './Link';
-import { navigate, patientPath } from './router';
+import { DATA_PATH, navigate, patientPath } from './router';
 import { buildSeries } from './series';
 import { tone } from './status';
 
 /** Patients list: pick whose dashboard to show. On narrow screens it becomes a row of chips. */
-export default function Sidebar({ activeId }: { activeId: string | null }) {
+export default function Sidebar({ activeId, dataActive }: { activeId: string | null; dataActive: boolean }) {
   const data = useAppData();
 
   return (
@@ -39,6 +39,9 @@ export default function Sidebar({ activeId }: { activeId: string | null }) {
           })}
         </ul>
       )}
+      <Link to={DATA_PATH} className="app-sidebar-data" aria-current={dataActive ? 'page' : undefined}>
+        Your data: backup, restore, delete
+      </Link>
     </nav>
   );
 }

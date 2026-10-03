@@ -19,11 +19,17 @@ export function tone(status: RangeStatus): 'out' | 'near' | 'ok' | 'none' {
   return status === 'in-range' ? 'ok' : 'none';
 }
 
-export function rangeText({ refLow, refHigh }: Pick<Point, 'refLow' | 'refHigh'>): string {
-  if (refLow !== null && refHigh !== null) return `Range ${formatNumber(refLow)}–${formatNumber(refHigh)}`;
-  if (refHigh !== null) return `Range ≤ ${formatNumber(refHigh)}`;
-  if (refLow !== null) return `Range ≥ ${formatNumber(refLow)}`;
-  return 'No range on report';
+/** "13–17", "≤ 200", "≥ 40", or null when the report printed no range. */
+export function rangeValue({ refLow, refHigh }: Pick<Point, 'refLow' | 'refHigh'>): string | null {
+  if (refLow !== null && refHigh !== null) return `${formatNumber(refLow)}–${formatNumber(refHigh)}`;
+  if (refHigh !== null) return `≤ ${formatNumber(refHigh)}`;
+  if (refLow !== null) return `≥ ${formatNumber(refLow)}`;
+  return null;
+}
+
+export function rangeText(point: Pick<Point, 'refLow' | 'refHigh'>): string {
+  const range = rangeValue(point);
+  return range ? `Range ${range}` : 'No range on report';
 }
 
 export type Tone = ReturnType<typeof tone>;
@@ -63,7 +69,7 @@ export function changeHeadline(name: string, kind: 'now-outside' | 'now-near' | 
   }
 }
 
-/** "Rising across your last 4 results (+18% overall)". */
-export function driftText(drift: { direction: 'rising' | 'falling'; count: number; percent: number }): string {
-  return `${drift.direction === 'rising' ? 'Rising' : 'Falling'} across your last ${drift.count} results (${formatPercent(drift.percent)} overall)`;
+/** "Rising across your last 4 results (+18% overall)"; the doctor summary says "the last". */
+export function driftText(drift: { direction: 'rising' | 'falling'; count: number; percent: number }, whose = 'your'): string {
+  return `${drift.direction === 'rising' ? 'Rising' : 'Falling'} across ${whose} last ${drift.count} results (${formatPercent(drift.percent)} overall)`;
 }

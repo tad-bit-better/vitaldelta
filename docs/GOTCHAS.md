@@ -63,7 +63,8 @@ what happens, why, and what to do.
 - **`pnpm e2e`** builds the app, serves it with `vite preview` (real CSP), and drives headless
   Chrome through upload → review → save in both storage modes, two patients, duplicate and
   mismatch checks, dashboard and test pages, and fails on any CSP violation, console error or
-  request to another host. Run it before pushing UI changes. `BASE=https://vitaldelta.app
+  request to another host. It also covers the doctor summary (including the print view) and
+  backup download → delete all → restore. Run it before pushing UI changes. `BASE=https://vitaldelta.app
   node apps/web/e2e/run.mjs` checks a deployment. Needs Chrome (`CHROME=` to point at it).
 
 - **pnpm doesn't reliably run `pre*`/`post*` scripts.** Chain steps explicitly
@@ -90,6 +91,17 @@ what happens, why, and what to do.
 - **A recognised result isn't always in its marker's standard unit**: when the printed unit
   wasn't recognised, the value is kept as printed (`unknown-unit`). Trends and comparisons
   must only compare results with the same unit.
+
+- **Backups keep every id** (`apps/web/src/storage/backup.ts`, format `vitaldelta-backup` version 1).
+  Restore adds only records whose id isn't already here, all or nothing, so restoring twice is
+  harmless and local edits win. Results come only with a report that's new here. If the data
+  model changes, bump `BACKUP_VERSION` and teach `parseBackup` to read the old version; old
+  backup files live on in people's downloads.
+- **Backup files are unencrypted health data.** The Your data page says so. Passphrase
+  encryption (v1.1) should cover backups too.
+- **Delete all data** (`deleteEverything` in `storage/wipe.ts`) deletes the database, Cache
+  Storage and service worker registrations, then AppShell drops its in-memory state and shows
+  the first-use choice. It can't touch files the user downloaded.
 
 ## Patients
 
@@ -129,6 +141,16 @@ what happens, why, and what to do.
   A new top-level route outside `/app` also needs a `vercel.json` rewrite.
 - **The tooltip is positioned with inline `style`** (React sets it through the DOM, which
   the CSP allows). Keep any other styling in CSS classes.
+
+## Doctor summary and printing
+
+- **Printing uses the browser's print dialog** (`window.print()`); "Save as PDF" there is the
+  PDF export, so no PDF library is needed. The `@media print` block in `app.css` hides
+  everything but the summary and switches to black on white with darker status colours.
+  Status keeps its icon and label because many printers are black and white.
+- **The summary sets `document.title`** while open, because browsers name the saved PDF after it.
+- **Check print layout with `SHOTS=dir pnpm e2e`**, which also saves `summary.pdf` (Chrome's
+  print engine). `pnpm dev` won't show print problems unless you open the print preview.
 
 ## Extraction
 
