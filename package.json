@@ -9,6 +9,7 @@
     "test": "pnpm -r test",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
-    "harness": "pnpm --filter @vitaldelta/extraction harness"
+    "harness": "pnpm --filter @vitaldelta/extraction harness",
+    "e2e": "pnpm --filter web build && node apps/web/e2e/run.mjs"
   }
 }

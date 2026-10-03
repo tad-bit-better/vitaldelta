@@ -41,7 +41,30 @@ what happens, why, and what to do.
   `/app` to `index.html`. Without it, opening `/app` directly 404s on Vercel (Vite's dev
   and preview servers fall back automatically, so this never shows up locally).
 
+## Deployment (Vercel)
+
+- **Every push to `main` deploys to production.** Use a branch (Vercel builds a preview
+  URL for it) for anything you want to check first.
+- **Vercel project settings that must stay**: root directory `apps/web`, preset Vite,
+  default build/output/install commands, and env var `ENABLE_EXPERIMENTAL_COREPACK=1` so
+  Vercel uses the pnpm version pinned in `package.json` (the lockfile is pnpm 12's format).
+- **Keep Web Analytics and Speed Insights off** in the Vercel dashboard; they add trackers.
+- **Cloudflare DNS records for vitaldelta.app must be "DNS only" (grey cloud)**, not
+  proxied. Proxying puts Cloudflare in the request path and can break Vercel's certificate
+  and headers. `.app` is HTTPS-only, so the site doesn't load until Vercel's cert is issued.
+- **One public address: `vitaldelta.app`.** In Vercel's Domains settings, `www.vitaldelta.app`
+  and `vitaldelta.vercel.app` both redirect to it. When editing a redirect, pick the target
+  from the dropdown; typing it without selecting doesn't save.
+- **Check production after deploys**: `curl -sI https://vitaldelta.app/app` should show the
+  CSP header and `server: Vercel` (not `cloudflare`), and `/dev/rows` must 404.
+
 ## Tooling
+
+- **`pnpm e2e`** builds the app, serves it with `vite preview` (real CSP), and drives headless
+  Chrome through upload → review → save in both storage modes, two patients, duplicate and
+  mismatch checks, dashboard and test pages, and fails on any CSP violation, console error or
+  request to another host. Run it before pushing UI changes. `BASE=https://vitaldelta.app
+  node apps/web/e2e/run.mjs` checks a deployment. Needs Chrome (`CHROME=` to point at it).
 
 - **pnpm doesn't reliably run `pre*`/`post*` scripts.** Chain steps explicitly
   (`"dev": "node scripts/x.mjs && vite"`).
@@ -67,6 +90,45 @@ what happens, why, and what to do.
 - **A recognised result isn't always in its marker's standard unit**: when the printed unit
   wasn't recognised, the value is kept as printed (`unknown-unit`). Trends and comparisons
   must only compare results with the same unit.
+
+## Patients
+
+- **A report is never assigned to a patient automatically.** Detected name/sex only produce a
+  "Suggested" label and mismatch warnings; the user must pick a patient (and tick "same
+  person" on a mismatch) before Save is enabled. Keep it that way: mixing two people's
+  results silently corrupts every trend.
+- **The patient name ends at the next column, found by layout** (a gap wider than 1.5× the
+  text height), not by a list of label words. The word list in `patient.ts` is only a
+  fallback for PDFs that store a whole line as one piece of text, so don't rely on extending
+  it for new labs.
+- **Names printed on reports are stored as profile `aliases`** (on the device only) so future
+  reports can be suggested. Fuzzy matching needs them as text, so they can't be hashed.
+- **Duplicate check**: same collection date plus the same file name or ≥80% identical values
+  for that patient. It blocks Save until the user confirms it's a different report.
+- **Everything is per patient**: `forProfile()` in `DataContext.ts` scopes reports/results, and
+  URLs are `/app/p/<id>` and `/app/p/<id>/tests/<key>`. Use `Link`/`navigate` for in-app links.
+
+## Insights and charts
+
+- **Flags compare a value only with the range printed on its own report** (`rangeStatus` in
+  `packages/extraction/src/flags.ts`), never a dictionary default. Wording must stay
+  non-diagnostic ("above the report's range by 24%"); `describeStatus` is the one place for it.
+- **Status always has three cues: colour, shape/icon and a label** (▲▼ outside, ◆ near a
+  limit, ● in range, ○ no range). Green vs amber is only ~6.6 apart for colour-blind readers,
+  so never show status by colour alone. Status colours were checked with the dataviz
+  palette validator against `--card`; re-run it if the palette or surface changes.
+- **Dashboard thresholds live in code, not the UI**: "near a limit" is within 10% of the
+  range (`NEAR_FRACTION`), a "large change" is 10% or more (`NOTABLE_CHANGE` in `series.ts`),
+  and drift needs 3+ results moving the same way, each step ≥1% and ≥5% overall
+  (`detectDrift` options). Change them there so every screen agrees.
+- **Changes are shown in neutral colours.** Whether "up" is good depends on the test, and
+  the app doesn't judge; only range status gets colour.
+- **Charts only plot results in one unit** (`buildSeries` in `apps/web/src/app/series.ts`);
+  others are listed as "different unit" and never compared.
+- **Every `/app/...` path must reach `AppShell`** (`App.tsx` matches the `/app/` prefix).
+  A new top-level route outside `/app` also needs a `vercel.json` rewrite.
+- **The tooltip is positioned with inline `style`** (React sets it through the DOM, which
+  the CSP allows). Keep any other styling in CSS classes.
 
 ## Extraction
 
