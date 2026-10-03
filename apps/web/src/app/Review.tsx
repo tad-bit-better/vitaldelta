@@ -1,5 +1,5 @@
 import { markers, REVIEW_THRESHOLD, type ExtractedResult, type Issue } from '@vitaldelta/extraction';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { NewResult } from '../storage/types';
 import { forProfile, useAppData } from './DataContext';
 import { formatDate } from './format';
@@ -114,6 +114,12 @@ export default function Review({ extracted, onSaved, onCancel }: Props) {
   const update = (key: number, change: Partial<Draft>) =>
     setDrafts((all) => all.map((d) => (d.key === key ? { ...d, ...change } : d)));
   const edit = (key: number, change: Partial<Draft>) => update(key, { ...change, edited: true });
+  // After a row needing a check is resolved, move on to the next thing to do (see effect below).
+  const advanceFrom = useRef<number | null>(null);
+  const resolve = (d: Draft, change: Partial<Draft>) => {
+    if (d.status === 'pending' && change.status && change.status !== 'pending') advanceFrom.current = d.key;
+    update(d.key, change);
+  };
 
   const pending = drafts.filter((d) => d.status === 'pending');
   const confirmed = drafts.filter((d) => d.status === 'confirmed');
@@ -148,6 +154,22 @@ export default function Review({ extracted, onSaved, onCancel }: Props) {
   if (!confirmed.length) blockers.push({ text: 'keep at least one result', target: null });
 
   const done = blockers.length === 0 && ready === total && total > 0;
+
+  // Next after "Looks right"/"Reject": the next row still to check (after this one, then from
+  // the top), else whatever still blocks Save, else the Save button itself.
+  useEffect(() => {
+    const from = advanceFrom.current;
+    if (from === null) return;
+    advanceFrom.current = null;
+    const order = flagged.map((d) => d.key);
+    const at = order.indexOf(from);
+    const next = [...flagged.slice(at + 1), ...flagged.slice(0, at)].find((d) => d.status === 'pending');
+    if (next) jumpTo(rowId(next.key), '[data-primary]');
+    else {
+      const target = blockers.find((b) => b.target)?.target;
+      jumpTo(target ?? 'review-save');
+    }
+  });
 
   async function save() {
     setSaving(true);
@@ -291,7 +313,7 @@ export default function Review({ extracted, onSaved, onCancel }: Props) {
           </p>
           <ul className="app-results">
             {flagged.map((d) => (
-              <ResultEditor key={d.key} draft={d} onUpdate={(c) => update(d.key, c)} onEdit={(c) => edit(d.key, c)} />
+              <ResultEditor key={d.key} draft={d} onUpdate={(c) => resolve(d, c)} onEdit={(c) => edit(d.key, c)} />
             ))}
           </ul>
         </div>
@@ -349,7 +371,7 @@ export default function Review({ extracted, onSaved, onCancel }: Props) {
         {error && <p className="app-error" role="alert">{error}</p>}
         <div className="app-actions">
           <button type="button" className="app-btn" onClick={onCancel} disabled={saving}>Discard</button>
-          <button type="button" className="app-btn app-btn-primary" onClick={save} disabled={saving || blockers.length > 0}>
+          <button id="review-save" type="button" className="app-btn app-btn-primary" onClick={save} disabled={saving || blockers.length > 0}>
             {saving ? 'Saving…' : `Save ${plural(confirmed.length, 'result')}`}
           </button>
         </div>
@@ -360,13 +382,17 @@ export default function Review({ extracted, onSaved, onCancel }: Props) {
 
 const rowId = (key: number) => `result-${key}`;
 
-/** Scrolls to a row (or field) and focuses its first input, so the next action is one click away. */
-function jumpTo(id: string) {
+/**
+ * Scrolls to a row, field or button and focuses it (or, inside it, the element matching
+ * `focus`, by default its first input), so the next action is one click away.
+ */
+function jumpTo(id: string, focus = 'input:not([readonly]), select') {
   const el = document.getElementById(id);
   if (!el) return;
-  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  const field = el.matches('input, select') ? el : el.querySelector<HTMLElement>('input:not([readonly]), select');
-  field?.focus({ preventScroll: true });
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  el.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
+  const target = el.matches('input, select, button') ? el : el.querySelector<HTMLElement>(focus);
+  target?.focus({ preventScroll: true });
 }
 
 type EditorProps = {
@@ -501,7 +527,7 @@ function ResultEditor({ draft: d, onUpdate, onEdit }: EditorProps) {
 
       <div className="app-result-actions">
         {d.status === 'pending' && (
-          <button type="button" className="app-btn app-btn-primary app-btn-sm" onClick={() => onUpdate({ status: 'confirmed' })}>
+          <button type="button" className="app-btn app-btn-primary app-btn-sm" data-primary onClick={() => onUpdate({ status: 'confirmed' })}>
             Looks right
           </button>
         )}
