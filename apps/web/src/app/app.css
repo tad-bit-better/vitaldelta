@@ -39,7 +39,7 @@
 .app-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 24px; border-bottom: 1px solid var(--line); }
 .app-logo { font-family: var(--font-display); font-weight: 700; font-size: 20px; color: var(--text); text-decoration: none; }
 .app-session { font-size: 14px; color: var(--warn); background: var(--warn-bg); border: 1px solid var(--warn-line); border-radius: 999px; padding: 4px 12px; }
-.app-main { flex: 1; width: 100%; max-width: 1320px; margin: 0 auto; padding: 32px 16px 48px; box-sizing: border-box; }
+.app-main { flex: 1; width: 100%; max-width: 1640px; margin: 0 auto; padding: 32px clamp(16px, 3vw, 40px) 48px; box-sizing: border-box; }
 .app-footer { padding: 20px 24px; border-top: 1px solid var(--line); font-size: 14px; color: var(--text-3); text-align: center; }
 
 .app-card { display: flex; flex-direction: column; gap: 18px; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: clamp(18px, 4vw, 32px); }
@@ -52,7 +52,7 @@
 .app-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }
 
 /* Layout: patients sidebar + content; the sidebar becomes a chip row on narrow screens. */
-.app-layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 20px; align-items: start; }
+.app-layout { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 24px; align-items: start; }
 .app-content { min-width: 0; }
 .app-sidebar { position: sticky; top: calc(16px + env(safe-area-inset-top, 0px)); display: flex; flex-direction: column; gap: 12px; padding: 16px; border: 1px solid var(--line); border-radius: 18px; background: var(--card); }
 .app-sidebar-title { margin: 4px 0 0; font-size: 13px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-3); }
@@ -183,7 +183,8 @@
 .app-test .app-status { grid-area: status; }
 .app-test-meta { grid-area: meta; font-size: 13px; }
 .app-test .app-spark { grid-area: spark; }
-.app-spark { display: block; width: 88px; height: 28px; }
+.app-spark { display: block; height: 28px; }
+span.app-spark { width: 88px; }
 .spark-line { fill: none; stroke: var(--text-3); stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }
 @media (max-width: 560px) {
   .app-test { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name value" "meta status"; gap: 4px 12px; }
@@ -191,6 +192,19 @@
   .app-test .app-spark { display: none; }
   .app-test .app-status { justify-self: end; }
 }
+
+/* Tests as cards (default): name on top, then the value large with its status, the trend and the details. */
+.app-tests-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
+.app-tests-grid .app-test { height: 100%; box-sizing: border-box; grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "name name" "value status" "spark spark" "meta meta"; grid-template-rows: auto auto auto 1fr;
+  align-items: baseline; gap: 6px 12px; padding: 16px; }
+.app-tests-grid .app-test-value { text-align: left; font-size: 24px; font-weight: 700; white-space: normal; }
+.app-tests-grid .app-test-value .app-muted { font-size: 15px; font-weight: 600; }
+.app-tests-grid .app-test .app-spark { display: flex; align-items: center; margin-block: 4px; }
+.app-tests-grid span.app-spark { width: auto; }
+.app-tests-grid .app-test .app-status { justify-self: end; }
+.app-tests-grid .app-test-meta { align-self: end; }
+.app-spark-empty { font-size: 13px; color: var(--text-3); }
 
 /* Dashboard highlights */
 .app-highlights { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
@@ -204,6 +218,7 @@
 .app-change-icon { flex: none; width: 16px; text-align: center; font-size: 14px; line-height: 1.5; }
 
 /* Sort toggle (segmented control) and status groups */
+.app-group-controls { display: flex; flex-wrap: wrap; gap: 8px; }
 .app-toggle { display: inline-flex; padding: 3px; gap: 2px; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--card-alt); }
 .app-toggle-btn { font: inherit; font-size: 13px; font-weight: 600; color: var(--text-2); background: transparent; border: 0; border-radius: 7px; padding: 6px 12px; cursor: pointer; }
 .app-toggle-btn:hover { color: var(--text); }

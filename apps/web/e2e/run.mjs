@@ -5,6 +5,7 @@
 //   pnpm e2e                                   build, serve locally, test
 //   BASE=https://vitaldelta.app node apps/web/e2e/run.mjs   test a deployment (no build)
 //   CHROME=/path/to/chrome ...                 if Chrome isn't in the default place
+//   SHOTS=/some/dir ...                        also save dashboard screenshots there
 //
 // Exits non-zero if any check fails.
 import { spawn } from 'node:child_process';
@@ -157,6 +158,19 @@ async function addReport(file, beforeReview = async () => {}) {
   await beforeReview();
   while (await click('Looks right')) await sleep(30);
 }
+const layoutButton = (name) =>
+  `[...document.querySelectorAll('[aria-label="Layout"] button')].find((b) => b.innerText.includes(${JSON.stringify(name)}))`;
+const layout = () => evaluate(`document.querySelector('.app-tests')?.classList.contains('app-tests-grid') ? 'grid' : 'list'`);
+async function shot(name, width = 1280) {
+  if (!process.env.SHOTS) return;
+  await send('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 2, mobile: width < 600 });
+  await sleep(300);
+  const { data } = (await send('Page.captureScreenshot', { captureBeyondViewport: true, clip: await evaluate(
+    `(() => { const r = document.querySelector('.app-group:has(.app-tests)').getBoundingClientRect(); return { x: 0, y: r.top + scrollY - 16, width: ${width}, height: r.height + 32, scale: 1 }; })()`) })).result;
+  writeFileSync(join(process.env.SHOTS, `${name}.png`), Buffer.from(data, 'base64'));
+  await send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false });
+}
+
 async function save() {
   await click('Save ');
   await waitForText('Report saved.');
@@ -220,6 +234,17 @@ try {
   check(groups[0]?.startsWith('Outside the report’s range'), 'tests needing attention listed first');
   check((await text('.app-highlights'))?.includes('Total cholesterol changed by +20%'), 'since-last-report change shown');
   check((await text('.app-highlights'))?.includes('Falling across your last 3 results'), 'steady trend shown');
+  check((await layout()) === 'grid', 'tests shown as cards by default');
+  await shot('grid');
+  await shot('grid-phone', 400);
+  await evaluate(`${layoutButton('List')}.click()`);
+  await sleep(200);
+  await shot('list');
+  await evaluate(`[...document.querySelectorAll('.app-test')].find((a) => a.innerText.startsWith('Haemoglobin')).click()`);
+  await waitFor(`!!document.querySelector('.chart svg')`, 'trend chart');
+  await evaluate('history.back()');
+  await sleep(600);
+  check((await layout()) === 'list', 'list layout kept after opening a test and going back');
   await evaluate(`[...document.querySelectorAll('.app-test')].find((a) => a.innerText.startsWith('Haemoglobin')).click()`);
   await waitFor(`!!document.querySelector('.chart svg')`, 'trend chart');
   check((await evaluate(`document.querySelectorAll('.chart-mark').length`)) === 3, 'chart plots all three results');

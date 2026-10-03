@@ -1,7 +1,6 @@
 import type { Point } from './series';
 import { tone } from './status';
 
-const W = 88;
 const H = 28;
 const PAD = 4;
 
@@ -9,7 +8,7 @@ const PAD = 4;
  * A tiny trend for list rows: neutral line, with only the latest point in its status
  * colour. Decorative: the row's text carries the same information.
  */
-export default function Sparkline({ points }: { points: Point[] }) {
+export default function Sparkline({ points, width: W = 88 }: { points: Point[]; width?: number }) {
   const recent = points.slice(-12);
   if (recent.length < 2) return <span className="app-spark" aria-hidden="true" />;
   const values = recent.map((p) => p.value);

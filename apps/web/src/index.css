@@ -1,0 +1,3 @@
+/* Page-wide basics. Without this the browser's default 8px body margin shows the white page around the app. */
+html { background: #06110c; color-scheme: dark; }
+body { margin: 0; }
