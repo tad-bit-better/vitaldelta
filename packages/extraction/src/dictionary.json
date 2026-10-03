@@ -1,0 +1,1075 @@
+{
+  "version": 1,
+  "markers": [
+    {
+      "id": "718-7",
+      "name": "Haemoglobin",
+      "unit": "g/dL",
+      "conversions": {
+        "mmol/L": 1.611
+      },
+      "plausibleMin": 2,
+      "plausibleMax": 25,
+      "synonyms": [
+        "Hb",
+        "HGB",
+        "Haemoglobin Concentration",
+        "Haemoglobin (Hb)"
+      ]
+    },
+    {
+      "id": "4544-3",
+      "name": "Haematocrit",
+      "unit": "%",
+      "conversions": {
+        "L/L": 100
+      },
+      "plausibleMin": 10,
+      "plausibleMax": 75,
+      "synonyms": [
+        "HCT",
+        "PCV",
+        "Packed Cell Volume",
+        "Erythrocyte Volume Fraction"
+      ]
+    },
+    {
+      "id": "789-8",
+      "name": "Red blood cell count",
+      "unit": "10^6/µL",
+      "plausibleMin": 1,
+      "plausibleMax": 9,
+      "synonyms": [
+        "RBC",
+        "RBC Count",
+        "Total RBC Count",
+        "TRBC",
+        "Red Blood Cells",
+        "Erythrocyte Count",
+        "Erythrocytes",
+        "Total Erythrocyte Count",
+        "RBC Total"
+      ]
+    },
+    {
+      "id": "6690-2",
+      "name": "White blood cell count",
+      "unit": "10^3/µL",
+      "plausibleMin": 0.1,
+      "plausibleMax": 200,
+      "synonyms": [
+        "WBC",
+        "WBC Count",
+        "Total WBC Count",
+        "TLC",
+        "Total Leucocyte Count",
+        "Leucocyte Count",
+        "Leucocytes",
+        "White Blood Cells",
+        "WCC",
+        "Total White Cell Count",
+        "Total Count (TC)"
+      ]
+    },
+    {
+      "id": "777-3",
+      "name": "Platelet count",
+      "unit": "10^3/µL",
+      "plausibleMin": 1,
+      "plausibleMax": 2000,
+      "synonyms": [
+        "Platelets",
+        "Platelet",
+        "PLT",
+        "PLT Count",
+        "Total Platelet Count",
+        "Thrombocytes",
+        "Thrombocyte Count"
+      ]
+    },
+    {
+      "id": "32623-1",
+      "name": "MPV",
+      "unit": "fL",
+      "plausibleMin": 3,
+      "plausibleMax": 25,
+      "synonyms": [
+        "Mean Platelet Volume",
+        "Mean Platelet Vol"
+      ]
+    },
+    {
+      "id": "32207-3",
+      "name": "PDW",
+      "unit": "fL",
+      "plausibleMin": 3,
+      "plausibleMax": 40,
+      "synonyms": [
+        "Platelet Distribution Width",
+        "PDW-SD"
+      ]
+    },
+    {
+      "id": "51637-7",
+      "name": "Plateletcrit",
+      "unit": "%",
+      "plausibleMin": 0.01,
+      "plausibleMax": 3,
+      "synonyms": [
+        "PCT",
+        "Plateletcrit (PCT)",
+        "Thrombocrit"
+      ]
+    },
+    {
+      "id": "787-2",
+      "name": "MCV",
+      "unit": "fL",
+      "plausibleMin": 40,
+      "plausibleMax": 150,
+      "synonyms": [
+        "Mean Corpuscular Volume",
+        "Mean Cell Volume"
+      ]
+    },
+    {
+      "id": "785-6",
+      "name": "MCH",
+      "unit": "pg",
+      "plausibleMin": 10,
+      "plausibleMax": 50,
+      "synonyms": [
+        "Mean Corpuscular Haemoglobin",
+        "Mean Cell Haemoglobin"
+      ]
+    },
+    {
+      "id": "786-4",
+      "name": "MCHC",
+      "unit": "g/dL",
+      "plausibleMin": 20,
+      "plausibleMax": 45,
+      "synonyms": [
+        "Mean Corpuscular Haemoglobin Concentration",
+        "Mean Cell Haemoglobin Concentration"
+      ]
+    },
+    {
+      "id": "788-0",
+      "name": "RDW",
+      "unit": "%",
+      "plausibleMin": 5,
+      "plausibleMax": 40,
+      "synonyms": [
+        "RDW-CV",
+        "Red Cell Distribution Width",
+        "Red Cell Distribution Width CV",
+        "RBC Distribution Width"
+      ]
+    },
+    {
+      "id": "770-8",
+      "name": "Neutrophils",
+      "unit": "%",
+      "plausibleMin": 0,
+      "plausibleMax": 100,
+      "synonyms": [
+        "Neutrophil",
+        "Neutrophil Percentage",
+        "NEUT%",
+        "NEU%",
+        "Polymorphs",
+        "Polymorphonuclear Cells",
+        "PMN",
+        "Segmented Neutrophils",
+        "Segs"
+      ]
+    },
+    {
+      "id": "736-9",
+      "name": "Lymphocytes",
+      "unit": "%",
+      "plausibleMin": 0,
+      "plausibleMax": 100,
+      "synonyms": [
+        "Lymphocyte",
+        "Lymphocyte Percentage",
+        "LYMPH%",
+        "LYM%",
+        "LY%"
+      ]
+    },
+    {
+      "id": "5905-5",
+      "name": "Monocytes",
+      "unit": "%",
+      "plausibleMin": 0,
+      "plausibleMax": 100,
+      "synonyms": [
+        "Monocyte",
+        "Monocyte Percentage",
+        "MONO%",
+        "MON%",
+        "MO%"
+      ]
+    },
+    {
+      "id": "713-8",
+      "name": "Eosinophils",
+      "unit": "%",
+      "plausibleMin": 0,
+      "plausibleMax": 100,
+      "synonyms": [
+        "Eosinophil",
+        "Eosinophil Percentage",
+        "EOS%",
+        "EO%"
+      ]
+    },
+    {
+      "id": "706-2",
+      "name": "Basophils",
+      "unit": "%",
+      "plausibleMin": 0,
+      "plausibleMax": 100,
+      "synonyms": [
+        "Basophil",
+        "Basophil Percentage",
+        "BASO%",
+        "BA%"
+      ]
+    },
+    {
+      "id": "751-8",
+      "name": "Absolute neutrophil count",
+      "unit": "10^3/µL",
+      "plausibleMin": 0,
+      "plausibleMax": 100,
+      "synonyms": [
+        "Absolute Neutrophils",
+        "Absolute Neutrophil",
+        "Neutrophils Absolute",
+        "Neutrophil Absolute Count",
+        "Abs Neutrophils",
+        "Neutrophils Abs",
+        "ANC",
+        "Neutrophil Count"
+      ]
+    },
+    {
+      "id": "731-0",
+      "name": "Absolute lymphocyte count",
+      "unit": "10^3/µL",
+      "plausibleMin": 0,
+      "plausibleMax": 200,
+      "synonyms": [
+        "Absolute Lymphocytes",
+        "Absolute Lymphocyte",
+        "Lymphocytes Absolute",
+        "Lymphocyte Absolute Count",
+        "Abs Lymphocytes",
+        "Lymphocytes Abs",
+        "ALC",
+        "Lymphocyte Count"
+      ]
+    },
+    {
+      "id": "742-7",
+      "name": "Absolute monocyte count",
+      "unit": "10^3/µL",
+      "plausibleMin": 0,
+      "plausibleMax": 50,
+      "synonyms": [
+        "Absolute Monocytes",
+        "Absolute Monocyte",
+        "Monocytes Absolute",
+        "Monocyte Absolute Count",
+        "Abs Monocytes",
+        "Monocytes Abs",
+        "AMC",
+        "Monocyte Count"
+      ]
+    },
+    {
+      "id": "711-2",
+      "name": "Absolute eosinophil count",
+      "unit": "10^3/µL",
+      "plausibleMin": 0,
+      "plausibleMax": 50,
+      "synonyms": [
+        "Absolute Eosinophils",
+        "Absolute Eosinophil",
+        "Eosinophils Absolute",
+        "Eosinophil Absolute Count",
+        "Abs Eosinophils",
+        "Eosinophils Abs",
+        "AEC",
+        "Eosinophil Count"
+      ]
+    },
+    {
+      "id": "704-7",
+      "name": "Absolute basophil count",
+      "unit": "10^3/µL",
+      "plausibleMin": 0,
+      "plausibleMax": 20,
+      "synonyms": [
+        "Absolute Basophils",
+        "Absolute Basophil",
+        "Basophils Absolute",
+        "Basophil Absolute Count",
+        "Abs Basophils",
+        "Basophils Abs",
+        "Basophil Count"
+      ]
+    },
+    {
+      "id": "30341-2",
+      "name": "ESR",
+      "unit": "mm/hr",
+      "plausibleMin": 0,
+      "plausibleMax": 200,
+      "synonyms": [
+        "Erythrocyte Sedimentation Rate",
+        "ESR Westergren",
+        "Westergren ESR",
+        "Sed Rate",
+        "Sedimentation Rate",
+        "ESR 1st Hour",
+        "ESR After 1 Hour"
+      ]
+    },
+    {
+      "id": "1558-6",
+      "name": "Fasting glucose",
+      "unit": "mg/dL",
+      "conversions": {
+        "mmol/L": 18.016
+      },
+      "plausibleMin": 10,
+      "plausibleMax": 1500,
+      "synonyms": [
+        "Glucose Fasting",
+        "Fasting Blood Sugar",
+        "FBS",
+        "FPG",
+        "FBG",
+        "Blood Sugar Fasting",
+        "Glucose F",
+        "Glucose FBS"
+      ]
+    },
+    {
+      "id": "2345-7",
+      "name": "Random glucose",
+      "unit": "mg/dL",
+      "conversions": {
+        "mmol/L": 18.016
+      },
+      "plausibleMin": 10,
+      "plausibleMax": 1500,
+      "synonyms": [
+        "Glucose Random",
+        "Random Blood Sugar",
+        "RBS",
+        "RBG",
+        "Blood Sugar Random",
+        "Glucose R",
+        "Glucose",
+        "Blood Sugar"
+      ]
+    },
+    {
+      "id": "4548-4",
+      "name": "HbA1c",
+      "unit": "%",
+      "conversions": {
+        "mmol/mol": {
+          "factor": 0.09148,
+          "offset": 2.152
+        }
+      },
+      "plausibleMin": 2,
+      "plausibleMax": 20,
+      "synonyms": [
+        "A1c",
+        "Haemoglobin A1c",
+        "Glycated Haemoglobin",
+        "Glycosylated Haemoglobin",
+        "Glycated Hb",
+        "Glycosylated Hb",
+        "Glyco Hb",
+        "GHb",
+        "Glycohaemoglobin"
+      ]
+    },
+    {
+      "id": "2093-3",
+      "name": "Total cholesterol",
+      "unit": "mg/dL",
+      "conversions": {
+        "mmol/L": 38.67
+      },
+      "plausibleMin": 30,
+      "plausibleMax": 1000,
+      "synonyms": [
+        "Cholesterol",
+        "Cholesterol Total",
+        "T. Cholesterol",
+        "Total Chol",
+        "CHOL",
+        "TC (Total Cholesterol)"
+      ]
+    },
+    {
+      "id": "2085-9",
+      "name": "HDL cholesterol",
+      "unit": "mg/dL",
+      "conversions": {
+        "mmol/L": 38.67
+      },
+      "plausibleMin": 5,
+      "plausibleMax": 200,
+      "synonyms": [
+        "HDL",
+        "HDL-C",
+        "HDL Cholesterol Direct",
+        "HDL Direct",
+        "HDL Chol",
+        "Cholesterol HDL",
+        "High Density Lipoprotein",
+        "High Density Lipoprotein Cholesterol"
+      ]
+    },
+    {
+      "id": "2089-1",
+      "name": "LDL cholesterol",
+      "unit": "mg/dL",
+      "conversions": {
+        "mmol/L": 38.67
+      },
+      "plausibleMin": 5,
+      "plausibleMax": 600,
+      "synonyms": [
+        "LDL",
+        "LDL-C",
+        "LDL Cholesterol Direct",
+        "LDL Cholesterol Calculated",
+        "LDL Direct",
+        "Direct LDL",
+        "LDL Calculated",
+        "Calculated LDL",
+        "LDL Chol",
+        "Cholesterol LDL",
+        "Low Density Lipoprotein",
+        "Low Density Lipoprotein Cholesterol"
+      ]
+    },
+    {
+      "id": "2571-8",
+      "name": "Triglycerides",
+      "unit": "mg/dL",
+      "conversions": {
+        "mmol/L": 88.57
+      },
+      "plausibleMin": 10,
+      "plausibleMax": 5000,
+      "synonyms": [
+        "Triglyceride",
+        "TG",
+        "TGL",
+        "Trigs"
+      ]
+    },
+    {
+      "id": "13458-5",
+      "name": "VLDL cholesterol",
+      "unit": "mg/dL",
+      "conversions": {
+        "mmol/L": 38.67
+      },
+      "plausibleMin": 1,
+      "plausibleMax": 500,
+      "synonyms": [
+        "VLDL",
+        "VLDL-C",
+        "VLDL Cholesterol Calculated",
+        "VLDL Chol",
+        "Very Low Density Lipoprotein",
+        "Very Low Density Lipoprotein Cholesterol"
+      ]
+    },
+    {
+      "id": "43396-1",
+      "name": "Non-HDL cholesterol",
+      "unit": "mg/dL",
+      "conversions": {
+        "mmol/L": 38.67
+      },
+      "plausibleMin": 10,
+      "plausibleMax": 1000,
+      "synonyms": [
+        "Non-HDL",
+        "Non-HDL-C",
+        "Cholesterol Non HDL"
+      ]
+    },
+    {
+      "id": "9830-1",
+      "name": "Cholesterol/HDL ratio",
+      "unit": "ratio",
+      "plausibleMin": 0.5,
+      "plausibleMax": 30,
+      "synonyms": [
+        "Total Cholesterol/HDL Ratio",
+        "TC/HDL Ratio",
+        "TC/HDL",
+        "Chol/HDL Ratio",
+        "CHOL/HDL"
+      ]
+    },
+    {
+      "id": "11054-4",
+      "name": "LDL/HDL ratio",
+      "unit": "ratio",
+      "plausibleMin": 0.1,
+      "plausibleMax": 20,
+      "synonyms": [
+        "LDL/HDL Cholesterol Ratio",
+        "LDL-C/HDL-C Ratio"
+      ]
+    },
+    {
+      "id": "2160-0",
+      "name": "Creatinine",
+      "unit": "mg/dL",
+      "conversions": {
+        "µmol/L": 0.01131
+      },
+      "plausibleMin": 0.1,
+      "plausibleMax": 25,
+      "synonyms": [
+        "Creat",
+        "CREA",
+        "Creatinine Enzymatic",
+        "Creatinine Jaffe"
+      ]
+    },
+    {
+      "id": "3091-6",
+      "name": "Urea",
+      "unit": "mg/dL",
+      "conversions": {
+        "mmol/L": 6.006
+      },
+      "plausibleMin": 2,
+      "plausibleMax": 500,
+      "synonyms": []
+    },
+    {
+      "id": "3094-0",
+      "name": "Blood urea nitrogen",
+      "unit": "mg/dL",
+      "conversions": {
+        "mmol/L": 2.801
+      },
+      "plausibleMin": 1,
+      "plausibleMax": 250,
+      "synonyms": [
+        "BUN",
+        "Blood Urea Nitrogen (BUN)"
+      ]
+    },
+    {
+      "id": "3084-1",
+      "name": "Uric acid",
+      "unit": "mg/dL",
+      "conversions": {
+        "µmol/L": 0.01681,
+        "mmol/L": 16.81
+      },
+      "plausibleMin": 0.5,
+      "plausibleMax": 25,
+      "synonyms": [
+        "Urate"
+      ]
+    },
+    {
+      "id": "62238-1",
+      "name": "eGFR",
+      "unit": "mL/min/1.73m²",
+      "plausibleMin": 1,
+      "plausibleMax": 200,
+      "synonyms": [
+        "Estimated GFR",
+        "GFR Estimated",
+        "Estimated Glomerular Filtration Rate",
+        "GFR",
+        "eGFR CKD-EPI",
+        "eGFR CKD EPI 2021",
+        "eGFR MDRD"
+      ]
+    },
+    {
+      "id": "3097-3",
+      "name": "BUN/creatinine ratio",
+      "unit": "ratio",
+      "plausibleMin": 1,
+      "plausibleMax": 100,
+      "synonyms": [
+        "Urea Nitrogen/Creatinine Ratio"
+      ]
+    },
+    {
+      "id": "2951-2",
+      "name": "Sodium",
+      "unit": "mmol/L",
+      "conversions": {
+        "mEq/L": 1
+      },
+      "plausibleMin": 100,
+      "plausibleMax": 180,
+      "synonyms": [
+        "Na"
+      ]
+    },
+    {
+      "id": "2823-3",
+      "name": "Potassium",
+      "unit": "mmol/L",
+      "conversions": {
+        "mEq/L": 1
+      },
+      "plausibleMin": 1,
+      "plausibleMax": 10,
+      "synonyms": [
+        "K"
+      ]
+    },
+    {
+      "id": "2075-0",
+      "name": "Chloride",
+      "unit": "mmol/L",
+      "conversions": {
+        "mEq/L": 1
+      },
+      "plausibleMin": 60,
+      "plausibleMax": 140,
+      "synonyms": [
+        "Cl"
+      ]
+    },
+    {
+      "id": "17861-6",
+      "name": "Calcium",
+      "unit": "mg/dL",
+      "conversions": {
+        "mmol/L": 4.008,
+        "mEq/L": 2.004
+      },
+      "plausibleMin": 3,
+      "plausibleMax": 20,
+      "synonyms": [
+        "Ca",
+        "Total Calcium",
+        "Calcium Total"
+      ]
+    },
+    {
+      "id": "2777-1",
+      "name": "Phosphorus",
+      "unit": "mg/dL",
+      "conversions": {
+        "mmol/L": 3.097
+      },
+      "plausibleMin": 0.5,
+      "plausibleMax": 15,
+      "synonyms": [
+        "Phosphate",
+        "Inorganic Phosphorus",
+        "Phosphorus Inorganic",
+        "Inorganic Phosphate",
+        "PO4"
+      ]
+    },
+    {
+      "id": "19123-9",
+      "name": "Magnesium",
+      "unit": "mg/dL",
+      "conversions": {
+        "mmol/L": 2.431,
+        "mEq/L": 1.215
+      },
+      "plausibleMin": 0.5,
+      "plausibleMax": 10,
+      "synonyms": [
+        "Mg"
+      ]
+    },
+    {
+      "id": "1975-2",
+      "name": "Total bilirubin",
+      "unit": "mg/dL",
+      "conversions": {
+        "µmol/L": 0.05847
+      },
+      "plausibleMin": 0,
+      "plausibleMax": 50,
+      "synonyms": [
+        "Bilirubin Total",
+        "T. Bilirubin",
+        "Total Bili",
+        "TBIL"
+      ]
+    },
+    {
+      "id": "1968-7",
+      "name": "Direct bilirubin",
+      "unit": "mg/dL",
+      "conversions": {
+        "µmol/L": 0.05847
+      },
+      "plausibleMin": 0,
+      "plausibleMax": 30,
+      "synonyms": [
+        "Bilirubin Direct",
+        "D. Bilirubin",
+        "Direct Bili",
+        "DBIL",
+        "Conjugated Bilirubin",
+        "Bilirubin Conjugated"
+      ]
+    },
+    {
+      "id": "1971-1",
+      "name": "Indirect bilirubin",
+      "unit": "mg/dL",
+      "conversions": {
+        "µmol/L": 0.05847
+      },
+      "plausibleMin": 0,
+      "plausibleMax": 30,
+      "synonyms": [
+        "Bilirubin Indirect",
+        "I. Bilirubin",
+        "Indirect Bili",
+        "IBIL",
+        "Unconjugated Bilirubin",
+        "Bilirubin Unconjugated"
+      ]
+    },
+    {
+      "id": "1742-6",
+      "name": "ALT",
+      "unit": "U/L",
+      "plausibleMin": 1,
+      "plausibleMax": 5000,
+      "synonyms": [
+        "SGPT",
+        "ALT/SGPT",
+        "SGPT/ALT",
+        "ALAT",
+        "GPT",
+        "Alanine Aminotransferase",
+        "Alanine Transaminase"
+      ]
+    },
+    {
+      "id": "1920-8",
+      "name": "AST",
+      "unit": "U/L",
+      "plausibleMin": 1,
+      "plausibleMax": 5000,
+      "synonyms": [
+        "SGOT",
+        "AST/SGOT",
+        "SGOT/AST",
+        "ASAT",
+        "GOT",
+        "Aspartate Aminotransferase",
+        "Aspartate Transaminase"
+      ]
+    },
+    {
+      "id": "6768-6",
+      "name": "Alkaline phosphatase",
+      "unit": "U/L",
+      "plausibleMin": 5,
+      "plausibleMax": 3000,
+      "synonyms": [
+        "ALP",
+        "ALKP",
+        "Alk Phos",
+        "Alk Phosphatase"
+      ]
+    },
+    {
+      "id": "2324-2",
+      "name": "GGT",
+      "unit": "U/L",
+      "plausibleMin": 1,
+      "plausibleMax": 3000,
+      "synonyms": [
+        "Gamma GT",
+        "GGTP",
+        "Gamma Glutamyl Transferase",
+        "Gamma Glutamyl Transpeptidase"
+      ]
+    },
+    {
+      "id": "2885-2",
+      "name": "Total protein",
+      "unit": "g/dL",
+      "plausibleMin": 2,
+      "plausibleMax": 15,
+      "synonyms": [
+        "Protein Total",
+        "Total Proteins",
+        "Proteins Total",
+        "TP"
+      ]
+    },
+    {
+      "id": "1751-7",
+      "name": "Albumin",
+      "unit": "g/dL",
+      "plausibleMin": 1,
+      "plausibleMax": 7,
+      "synonyms": [
+        "ALB"
+      ]
+    },
+    {
+      "id": "10834-0",
+      "name": "Globulin",
+      "unit": "g/dL",
+      "plausibleMin": 0.5,
+      "plausibleMax": 10,
+      "synonyms": [
+        "GLOB"
+      ]
+    },
+    {
+      "id": "1759-0",
+      "name": "A/G ratio",
+      "unit": "ratio",
+      "plausibleMin": 0.1,
+      "plausibleMax": 5,
+      "synonyms": [
+        "Albumin/Globulin Ratio"
+      ]
+    },
+    {
+      "id": "3016-3",
+      "name": "TSH",
+      "unit": "µIU/mL",
+      "plausibleMin": 0.001,
+      "plausibleMax": 500,
+      "synonyms": [
+        "Thyroid Stimulating Hormone",
+        "Thyrotropin",
+        "TSH Ultrasensitive",
+        "Ultrasensitive TSH",
+        "US TSH",
+        "TSH 3rd Generation",
+        "Third Generation TSH",
+        "Sensitive TSH",
+        "sTSH",
+        "hTSH"
+      ]
+    },
+    {
+      "id": "3024-7",
+      "name": "Free T4",
+      "unit": "ng/dL",
+      "conversions": {
+        "pmol/L": 0.0777
+      },
+      "plausibleMin": 0.1,
+      "plausibleMax": 10,
+      "synonyms": [
+        "FT4",
+        "T4 Free",
+        "Free Thyroxine",
+        "Thyroxine Free"
+      ]
+    },
+    {
+      "id": "3051-0",
+      "name": "Free T3",
+      "unit": "pg/mL",
+      "conversions": {
+        "pmol/L": 0.651
+      },
+      "plausibleMin": 0.5,
+      "plausibleMax": 30,
+      "synonyms": [
+        "FT3",
+        "T3 Free",
+        "Free Triiodothyronine",
+        "Triiodothyronine Free"
+      ]
+    },
+    {
+      "id": "3026-2",
+      "name": "Total T4",
+      "unit": "µg/dL",
+      "conversions": {
+        "nmol/L": 0.0777
+      },
+      "plausibleMin": 0.5,
+      "plausibleMax": 30,
+      "synonyms": [
+        "T4",
+        "TT4",
+        "T4 Total",
+        "Thyroxine",
+        "Total Thyroxine",
+        "Thyroxine Total"
+      ]
+    },
+    {
+      "id": "3053-6",
+      "name": "Total T3",
+      "unit": "ng/dL",
+      "conversions": {
+        "nmol/L": 65.1
+      },
+      "plausibleMin": 20,
+      "plausibleMax": 700,
+      "synonyms": [
+        "T3",
+        "TT3",
+        "T3 Total",
+        "Triiodothyronine",
+        "Total Triiodothyronine",
+        "Triiodothyronine Total"
+      ]
+    },
+    {
+      "id": "1989-3",
+      "name": "Vitamin D (25-OH)",
+      "unit": "ng/mL",
+      "conversions": {
+        "nmol/L": 0.4006
+      },
+      "plausibleMin": 1,
+      "plausibleMax": 200,
+      "synonyms": [
+        "Vitamin D",
+        "Vit D",
+        "Vitamin D Total",
+        "Total Vitamin D",
+        "25-OH Vitamin D",
+        "25 Hydroxy Vitamin D",
+        "Vitamin D 25 Hydroxy",
+        "25(OH)D",
+        "Total 25 Hydroxy Vitamin D",
+        "Calcidiol"
+      ]
+    },
+    {
+      "id": "2132-9",
+      "name": "Vitamin B12",
+      "unit": "pg/mL",
+      "conversions": {
+        "pmol/L": 1.355
+      },
+      "plausibleMin": 30,
+      "plausibleMax": 5000,
+      "synonyms": [
+        "B12",
+        "Vit B12",
+        "Cyanocobalamin",
+        "Cobalamin"
+      ]
+    },
+    {
+      "id": "2276-4",
+      "name": "Ferritin",
+      "unit": "ng/mL",
+      "plausibleMin": 1,
+      "plausibleMax": 10000,
+      "synonyms": [
+        "FERR"
+      ]
+    },
+    {
+      "id": "2498-4",
+      "name": "Iron",
+      "unit": "µg/dL",
+      "conversions": {
+        "µmol/L": 5.585
+      },
+      "plausibleMin": 5,
+      "plausibleMax": 500,
+      "synonyms": [
+        "Fe",
+        "Iron Total"
+      ]
+    },
+    {
+      "id": "2500-7",
+      "name": "TIBC",
+      "unit": "µg/dL",
+      "conversions": {
+        "µmol/L": 5.585
+      },
+      "plausibleMin": 50,
+      "plausibleMax": 800,
+      "synonyms": [
+        "Total Iron Binding Capacity",
+        "Iron Binding Capacity Total"
+      ]
+    },
+    {
+      "id": "2501-5",
+      "name": "UIBC",
+      "unit": "µg/dL",
+      "conversions": {
+        "µmol/L": 5.585
+      },
+      "plausibleMin": 0,
+      "plausibleMax": 600,
+      "synonyms": [
+        "Unsaturated Iron Binding Capacity"
+      ]
+    },
+    {
+      "id": "2502-3",
+      "name": "Transferrin saturation",
+      "unit": "%",
+      "plausibleMin": 1,
+      "plausibleMax": 100,
+      "synonyms": [
+        "TSAT",
+        "Iron Saturation"
+      ]
+    },
+    {
+      "id": "1988-5",
+      "name": "CRP",
+      "unit": "mg/L",
+      "plausibleMin": 0,
+      "plausibleMax": 500,
+      "synonyms": [
+        "C-Reactive Protein",
+        "CRP Quantitative",
+        "Quantitative CRP"
+      ]
+    },
+    {
+      "id": "30522-7",
+      "name": "hs-CRP",
+      "unit": "mg/L",
+      "plausibleMin": 0,
+      "plausibleMax": 50,
+      "synonyms": [
+        "High Sensitivity CRP",
+        "High Sensitive CRP",
+        "High Sensitivity C-Reactive Protein",
+        "High Sensitive C-Reactive Protein"
+      ]
+    }
+  ]
+}
