@@ -13,7 +13,13 @@
   --warn: #f2b661;
   --warn-bg: #2a1f0e;
   --warn-line: #5c4119;
-  --danger: #ff8a7a;
+  --danger: #ff5c7a;
+  /* Status colours (validated on --card with the dataviz palette checks); always paired
+     with an icon/shape and a label, never colour alone. */
+  --status-ok: var(--accent);
+  --status-near: var(--warn);
+  --status-out: #ff5c7a;
+  --status-none: var(--text-3);
   --font-display: "Bricolage Grotesque Variable", "Bricolage Grotesque", Manrope, system-ui, sans-serif;
   --font-body: "Manrope Variable", Manrope, "Segoe UI", system-ui, sans-serif;
 
@@ -33,7 +39,7 @@
 .app-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 24px; border-bottom: 1px solid var(--line); }
 .app-logo { font-family: var(--font-display); font-weight: 700; font-size: 20px; color: var(--text); text-decoration: none; }
 .app-session { font-size: 14px; color: var(--warn); background: var(--warn-bg); border: 1px solid var(--warn-line); border-radius: 999px; padding: 4px 12px; }
-.app-main { flex: 1; width: 100%; max-width: 1040px; margin: 0 auto; padding: 32px 16px 48px; box-sizing: border-box; }
+.app-main { flex: 1; width: 100%; max-width: 1320px; margin: 0 auto; padding: 32px 16px 48px; box-sizing: border-box; }
 .app-footer { padding: 20px 24px; border-top: 1px solid var(--line); font-size: 14px; color: var(--text-3); text-align: center; }
 
 .app-card { display: flex; flex-direction: column; gap: 18px; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: clamp(18px, 4vw, 32px); }
@@ -44,6 +50,26 @@
 .app-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; }
 .app-row-top { align-items: flex-start; }
 .app-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }
+
+/* Layout: patients sidebar + content; the sidebar becomes a chip row on narrow screens. */
+.app-layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 20px; align-items: start; }
+.app-content { min-width: 0; }
+.app-sidebar { position: sticky; top: calc(16px + env(safe-area-inset-top, 0px)); display: flex; flex-direction: column; gap: 12px; padding: 16px; border: 1px solid var(--line); border-radius: 18px; background: var(--card); }
+.app-sidebar-title { margin: 4px 0 0; font-size: 13px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-3); }
+.app-patients { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.app-patient { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 10px; border: 1px solid transparent; color: var(--text); text-decoration: none; }
+.app-patient:hover { background: var(--card-alt); }
+.app-patient[aria-current="page"] { background: var(--card-alt); border-color: var(--accent); }
+.app-patient-name { font-weight: 600; overflow-wrap: anywhere; }
+.app-patient-meta { font-size: 13px; color: var(--text-3); }
+@media (max-width: 860px) {
+  .app-layout { grid-template-columns: minmax(0, 1fr); }
+  .app-sidebar { position: static; flex-direction: row; flex-wrap: wrap; align-items: center; padding: 12px; }
+  .app-sidebar-title { display: none; }
+  .app-patients { flex-direction: row; overflow-x: auto; flex: 1 1 100%; order: 2; padding-bottom: 2px; }
+  .app-patient { flex: none; padding: 8px 12px; border-color: var(--line); }
+  .app-sidebar-add { order: 1; }
+}
 
 /* Buttons */
 .app-btn { font: inherit; font-weight: 600; color: var(--text); background: transparent; border: 1px solid var(--line-strong); border-radius: 10px; padding: 10px 16px; cursor: pointer; }
@@ -76,6 +102,20 @@
 .app-drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .app-error { color: var(--danger); }
 .app-notice { color: var(--accent); }
+
+/* Patient choice on the review screen */
+.app-patient-pick { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 16px; border: 1px solid var(--line-strong); border-radius: 14px; min-width: 0; }
+.app-patient-pick legend { padding: 0 6px; font-family: var(--font-display); font-weight: 700; font-size: 18px; }
+.app-patient-options { display: flex; flex-direction: column; gap: 6px; }
+.app-option-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--card-alt); cursor: pointer; }
+.app-option-row:has(input:checked) { border-color: var(--accent); }
+.app-option-row input { accent-color: var(--accent); width: 18px; height: 18px; margin: 0; }
+.app-option-row > span { flex: 1 1 160px; min-width: 0; overflow-wrap: anywhere; }
+.app-option-row > .app-chip { flex: none; }
+.app-new-patient { margin-left: 28px; }
+.app-warning { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; color: var(--warn); background: var(--warn-bg); border: 1px solid var(--warn-line); border-radius: 10px; }
+.app-warning .app-option-row { color: var(--text); }
+.app-confirm { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px; border: 1px solid var(--danger); border-radius: 10px; }
 
 /* Review */
 .app h2 { margin: 0; font-family: var(--font-display); font-size: 20px; letter-spacing: -.01em; }
@@ -125,3 +165,88 @@
 .app-report { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--card-alt); }
 .app-report > div:first-child { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .app-report .app-muted { font-size: 14px; overflow-wrap: anywhere; }
+
+/* Status badge: icon + label + colour. */
+.app-status { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; white-space: nowrap; }
+.app-status-ok { color: var(--status-ok); }
+.app-status-near { color: var(--status-near); }
+.app-status-out { color: var(--status-out); }
+.app-status-none { color: var(--status-none); }
+
+/* Tests list (home) */
+.app-tests { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.app-test { display: grid; grid-template-columns: minmax(0, 2fr) auto minmax(0, 1fr) auto; grid-template-areas: "name spark value status" "meta meta meta meta";
+  align-items: center; gap: 2px 16px; padding: 12px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--card-alt); color: var(--text); text-decoration: none; }
+.app-test:hover { border-color: var(--line-strong); }
+.app-test-name { grid-area: name; font-weight: 600; overflow-wrap: break-word; min-width: 0; }
+.app-test-value { grid-area: value; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.app-test .app-status { grid-area: status; }
+.app-test-meta { grid-area: meta; font-size: 13px; }
+.app-test .app-spark { grid-area: spark; }
+.app-spark { display: block; width: 88px; height: 28px; }
+.spark-line { fill: none; stroke: var(--text-3); stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }
+@media (max-width: 560px) {
+  .app-test { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name value" "meta status"; gap: 4px 12px; }
+  /* The test page has the full chart; the row keeps the name readable instead. */
+  .app-test .app-spark { display: none; }
+  .app-test .app-status { justify-self: end; }
+}
+
+/* Dashboard highlights */
+.app-highlights { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+.app-highlight { display: flex; flex-direction: column; gap: 10px; padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--card-alt); }
+.app-changes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.app-change { display: flex; gap: 10px; align-items: flex-start; padding: 8px; margin: 0 -8px; border-radius: 10px; color: var(--text); text-decoration: none; }
+.app-change:hover { background: var(--card); }
+.app-change > span:last-child { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.app-change strong { font-weight: 600; }
+.app-change .app-muted { font-size: 13px; }
+.app-change-icon { flex: none; width: 16px; text-align: center; font-size: 14px; line-height: 1.5; }
+
+/* Sort toggle (segmented control) and status groups */
+.app-toggle { display: inline-flex; padding: 3px; gap: 2px; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--card-alt); }
+.app-toggle-btn { font: inherit; font-size: 13px; font-weight: 600; color: var(--text-2); background: transparent; border: 0; border-radius: 7px; padding: 6px 12px; cursor: pointer; }
+.app-toggle-btn:hover { color: var(--text); }
+.app-toggle-btn[aria-pressed="true"] { background: var(--line-strong); color: var(--text); }
+.app-test-group { display: flex; flex-direction: column; gap: 8px; }
+.app-test-group + .app-test-group { margin-top: 8px; }
+.app-test-group-head { margin: 0; font-size: 15px; font-weight: 700; }
+.app-test-group-head .app-muted { font-weight: 600; }
+
+/* Test detail */
+.app-back { align-self: flex-start; font-size: 14px; color: var(--text-2); text-decoration: none; }
+.app-back:hover { color: var(--text); }
+.app-latest { display: flex; flex-direction: column; gap: 6px; padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--card-alt); }
+.app-latest-label { font-size: 14px; color: var(--text-2); }
+.app-latest-value { font-size: 44px; font-weight: 700; line-height: 1.1; }
+.app-latest-value span { font-size: 18px; font-weight: 600; color: var(--text-2); }
+.app-table-wrap { overflow-x: auto; }
+.app-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.app-table th { text-align: left; font-weight: 600; color: var(--text-2); padding: 8px 10px; border-bottom: 1px solid var(--line-strong); white-space: nowrap; }
+.app-table td { padding: 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.app-num { font-variant-numeric: tabular-nums; }
+
+/* Trend chart */
+.chart { position: relative; width: 100%; }
+.chart svg { display: block; overflow: visible; }
+.chart-grid { stroke: var(--line); stroke-width: 1; }
+.chart-axis { fill: var(--text-3); font-size: 12px; font-variant-numeric: tabular-nums; }
+.chart-label { fill: var(--text); font-size: 13px; font-weight: 700; }
+.chart-band { fill: var(--accent); fill-opacity: .1; }
+.chart-band-edge { stroke: var(--accent); stroke-opacity: .35; stroke-width: 1; }
+.chart-line { fill: none; stroke: var(--text-3); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.chart-crosshair { stroke: var(--text-3); stroke-width: 1; }
+.chart-hit { fill: transparent; }
+.chart-point { outline: none; cursor: default; }
+.chart-point-hit { fill: transparent; }
+.chart-point:focus-visible .chart-point-hit { stroke: var(--accent); stroke-width: 2; }
+.chart-mark { stroke: var(--card); stroke-width: 2; }
+.chart-mark-ok { fill: var(--status-ok); }
+.chart-mark-near { fill: var(--status-near); }
+.chart-mark-out { fill: var(--status-out); }
+.chart-mark-none { fill: var(--card); stroke: var(--status-none); }
+.chart-tooltip { position: absolute; transform: translateX(12px); display: flex; flex-direction: column; gap: 2px; min-width: 160px; max-width: 260px;
+  padding: 10px 12px; font-size: 13px; color: var(--text-2); background: var(--card-alt); border: 1px solid var(--line-strong); border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .4); pointer-events: none; }
+.chart-tooltip-left { transform: translateX(calc(-100% - 12px)); }
+.chart-tooltip strong { font-size: 16px; color: var(--text); }

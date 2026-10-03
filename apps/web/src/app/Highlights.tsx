@@ -1,0 +1,78 @@
+import { formatDate, formatNumber, formatPercent } from './format';
+import Link from './Link';
+import { testPath } from './router';
+import type { SinceLastReport, TestSeries } from './series';
+import { changeHeadline, driftText, STATUS, tone } from './status';
+
+type Props = { profileId: string; summary: SinceLastReport | null; tests: TestSeries[] };
+
+/** The two things a skim of the latest report misses: what changed, and slow steady moves. */
+export default function Highlights({ profileId, summary, tests }: Props) {
+  if (!summary) return null;
+  const drifting = tests.filter((t) => t.drift).sort((a, b) => b.drift!.count - a.drift!.count || a.name.localeCompare(b.name));
+
+  return (
+    <div className="app-highlights">
+      <section className="app-highlight" aria-labelledby="since-last">
+        <h2 id="since-last">Since your last report</h2>
+        {summary.previousDate === null ? (
+          <p className="app-muted">Add another report to see what changed.</p>
+        ) : (
+          <>
+            <p className="app-muted">
+              {formatDate(summary.latestDate)} compared with each test’s previous result.
+            </p>
+            {summary.changes.length === 0 ? (
+              <p>No status changes and no moves of 10% or more.</p>
+            ) : (
+              <ul className="app-changes">
+                {summary.changes.map(({ series: s, kind }) => (
+                  <li key={s.key}>
+                    <Link to={testPath(profileId, s.key)} className="app-change">
+                      <span className={`app-change-icon app-status-${tone(s.latest.status)}`} aria-hidden="true">
+                        {STATUS[s.latest.status].icon}
+                      </span>
+                      <span>
+                        <strong>{changeHeadline(s.name, kind, s.latest.status, s.change!.percent)}</strong>
+                        <span className="app-muted">
+                          {formatNumber(s.change!.from.value)} → {formatNumber(s.latest.value)} {s.unit}
+                          {kind === 'large-change' ? '' : ` (${formatPercent(s.change!.percent)})`} · previous result{' '}
+                          {formatDate(s.change!.from.date)}
+                        </span>
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {summary.newTests.length > 0 && (
+              <p className="app-note">First result for: {summary.newTests.map((t) => t.name).join(', ')}.</p>
+            )}
+          </>
+        )}
+      </section>
+
+      {drifting.length > 0 && (
+        <section className="app-highlight" aria-labelledby="steady">
+          <h2 id="steady">Steady trends</h2>
+          <p className="app-muted">Tests moving the same way across 3 or more results, even if still in range.</p>
+          <ul className="app-changes">
+            {drifting.map((t) => (
+              <li key={t.key}>
+                <Link to={testPath(profileId, t.key)} className="app-change">
+                  <span className="app-change-icon app-muted" aria-hidden="true">
+                    {t.drift!.direction === 'rising' ? '↗' : '↘'}
+                  </span>
+                  <span>
+                    <strong>{t.name}</strong>
+                    <span className="app-muted">{driftText(t.drift!)}</span>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+    </div>
+  );
+}

@@ -16,7 +16,7 @@ export default function App() {
       </Suspense>
     );
   }
-  if (path === '/app') {
+  if (path === '/app' || path.startsWith('/app/')) {
     return (
       <Suspense fallback={null}>
         <AppShell />
