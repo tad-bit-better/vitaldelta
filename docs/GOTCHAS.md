@@ -75,8 +75,10 @@ what happens, why, and what to do.
   own `tsconfig.harness.json` with Node types.
 - **The dictionary JSON is cast to `Marker[]`** in `dictionary.ts` (TypeScript's JSON
   inference can't express optional keys). `dictionary.test.ts` is what checks the shape.
-- **Port 5173 may be taken** by another project; Vite then uses 5174. Check the dev
-  server's output for the real URL.
+- **Run one dev server at a time.** Two `pnpm dev` servers for this app share
+  `apps/web/node_modules/.vite` and keep invalidating each other's bundled dependencies: the
+  page goes blank with "504 (Outdated Optimize Dep)" errors for react.js. If Vite says "Port
+  5173 is in use", check it isn't an old VitalDelta dev server (`lsof -iTCP:5173 -sTCP:LISTEN`).
 - **Dev-only pages** (`/dev/rows`) are loaded behind `import.meta.env.DEV`, so they're
   left out of production builds. Keep that pattern for any debug tooling.
 
@@ -159,6 +161,23 @@ what happens, why, and what to do.
   in `pageTitle` in `AppShell.tsx`, like every page's title.
 - **Check print layout with `SHOTS=dir pnpm e2e`**, which also saves `summary.pdf` (Chrome's
   print engine). `pnpm dev` won't show print problems unless you open the print preview.
+
+## Landing page prerender and link previews
+
+- **The landing page is rendered to HTML at build time** (`prerenderLanding` in
+  `vite.config.ts`, using `react-dom/server`), because crawlers and link previews (LinkedIn,
+  Google, Slack) don't run JavaScript. `main.tsx` then hydrates it instead of re-rendering.
+- **So `Landing.tsx` must render the same on the server and in the browser**: no `window`,
+  `document`, dates, random values or browser checks during render (use an effect). A mismatch
+  shows up as React error #418 in `pnpm e2e`.
+- **Two HTML files**: `index.html` (prerendered landing) and `app.html` (empty shell,
+  `noindex`) for every `/app` route. vercel.json rewrites `/app/*` to `app.html`; the same
+  plugin rewrites them for `vite preview` (it must not be `apply: 'build'`, or the preview
+  rewrite silently doesn't run and deep `/app/...` links get the landing page). The service
+  worker's offline fallback picks the matching file. `pnpm dev` serves the unrendered page.
+- **Open Graph tags are in `index.html`; the image is `public/og.png`** (1200×630, the hero).
+  Regenerate it with `scripts/og-image.mjs` when the hero changes. LinkedIn caches previews:
+  use its Post Inspector to refresh after changing them.
 
 ## Offline (service worker)
 

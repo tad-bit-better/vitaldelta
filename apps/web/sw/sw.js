@@ -46,7 +46,9 @@ self.addEventListener('fetch', (event) => {
 
   if (request.mode === 'navigate') {
     // Network first, so a new version shows up straight away; the cached app when offline.
-    event.respondWith(fetch(request).catch(() => caches.match('/', { cacheName: CACHE, ignoreVary: true })));
+    // The app's pages use app.html; everything else is the (prerendered) landing page.
+    const page = /^\/app(\/|$)/.test(url.pathname) ? '/app.html' : '/';
+    event.respondWith(fetch(request).catch(() => caches.match(page, { cacheName: CACHE, ignoreVary: true })));
     return;
   }
 

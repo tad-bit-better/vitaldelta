@@ -213,6 +213,16 @@ await send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 900, dev
 
 try {
   // ---------- Session mode: nothing on disk ----------
+  // ---------- What crawlers see (no JavaScript) ----------
+  console.log('\nCrawlers and link previews');
+  const landingHtml = await (await fetch(`${base}/`)).text();
+  check(landingHtml.includes('See how your lab results') && landingHtml.includes('Nothing is uploaded'), 'landing page text is in the HTML (prerendered)');
+  check(['og:title', 'og:description', 'og:image', 'twitter:card'].every((t) => landingHtml.includes(t)), 'link preview tags present');
+  const og = await fetch(`${base}/og.png`);
+  check(og.ok && og.headers.get('content-type') === 'image/png', 'og.png is served');
+  const appHtml = await (await fetch(`${base}/app/p/x/tests/y`)).text();
+  check(!appHtml.includes('See how your lab results') && appHtml.includes('noindex'), 'app pages get the empty, noindex shell');
+
   // ---------- Demo ----------
   console.log('\nDemo');
   await goto('/');
