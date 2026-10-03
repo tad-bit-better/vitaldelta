@@ -29,14 +29,19 @@ export default function Upload({ onExtracted, onCancel, sample }: Props) {
   const [file, setFile] = useState<File | null>(null);
   const [needsPassword, setNeedsPassword] = useState(false);
   const [password, setPassword] = useState('');
-  const [busy, setBusy] = useState(false);
+  const [stage, setStage] = useState<'reading' | 'finding' | null>(null);
+  const busy = stage !== null;
   const [error, setError] = useState<string | null>(null);
 
   async function read(selected: File, pw?: string) {
-    setBusy(true);
+    setStage('reading');
     setError(null);
     try {
-      const rows = groupRows(await readPdf(await selected.arrayBuffer(), pw));
+      const items = await readPdf(await selected.arrayBuffer(), pw);
+      // Extraction runs on this thread; let the browser show the new step first.
+      setStage('finding');
+      await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve)));
+      const rows = groupRows(items);
       const results = extractResults(rows);
       if (!results.length) {
         setError('We couldn’t find any lab results in this PDF. Is it a lab report?');
@@ -53,7 +58,7 @@ export default function Upload({ onExtracted, onCancel, sample }: Props) {
         setError('We couldn’t read this PDF. It may be damaged or not a PDF.');
       }
     } finally {
-      setBusy(false);
+      setStage(null);
     }
   }
 
@@ -70,7 +75,7 @@ export default function Upload({ onExtracted, onCancel, sample }: Props) {
       <h1>Add a report</h1>
       <p className="app-muted">Choose a lab report PDF. It’s read here in your browser and never uploaded.</p>
       <label
-        className="app-drop"
+        className={`app-drop${busy ? ' app-drop-busy' : ''}`}
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
           e.preventDefault();
@@ -78,7 +83,16 @@ export default function Upload({ onExtracted, onCancel, sample }: Props) {
         }}
       >
         <input type="file" accept="application/pdf" disabled={busy} onChange={(e) => choose(e.target.files?.[0])} />
-        <span>{busy ? 'Reading…' : file ? file.name : 'Drop a PDF here or click to choose'}</span>
+        <span aria-live="polite">
+          {stage === 'reading'
+            ? `Reading ${file?.name ?? 'the PDF'}…`
+            : stage === 'finding'
+              ? 'Finding results…'
+              : file
+                ? file.name
+                : 'Drop a PDF here or click to choose'}
+        </span>
+        {busy && <span className="app-drop-progress" aria-hidden="true" />}
       </label>
 
       {sample && (

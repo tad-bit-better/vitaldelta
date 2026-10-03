@@ -188,6 +188,8 @@ async function shot(name, width = 1280) {
 const axeSource = readFileSync(createRequire(import.meta.url).resolve('axe-core/axe.min.js'), 'utf8');
 async function a11y(label) {
   if (!(await evaluate(`typeof axe !== 'undefined'`))) await evaluate(axeSource);
+  // Contrast is measured on finished screens, not mid fade-in.
+  await evaluate('Promise.all(document.getAnimations().filter((a) => a.effect?.getTiming().iterations !== Infinity).map((a) => a.finished))');
   const found = await evaluate(`axe.run(document, { resultTypes: ['violations'] }).then((r) => r.violations
     .filter((v) => v.impact === 'serious' || v.impact === 'critical')
     .map((v) => v.id + ': ' + v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(', ')))`);

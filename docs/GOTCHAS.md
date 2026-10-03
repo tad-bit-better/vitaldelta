@@ -193,6 +193,10 @@ what happens, why, and what to do.
 - **AppShell sets each page's title and moves focus to the page's `<h1>`** after navigation,
   so screen readers announce the new page. Every page needs exactly one `<h1>`.
 - **`pnpm e2e` runs axe-core on every screen** and fails on serious or critical problems.
+- **Page entrance animations** (`app-enter` in `app.css`) use `animation-fill-mode: backwards`
+  so no transform is left on the page afterwards; a leftover transform would break any
+  `position: fixed` inside it. Every animation has a `prefers-reduced-motion` fallback (a short
+  fade, no movement). The e2e axe check waits for animations to finish before measuring contrast.
 - **Focusable SVG elements need a role** (chart points use `role="img"` with an `aria-label`).
 
 ## Extraction
