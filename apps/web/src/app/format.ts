@@ -9,3 +9,10 @@ export function formatDate(iso: string): string {
 export function formatNumber(n: number): string {
   return String(Number(n.toPrecision(4)));
 }
+
+/** Signed percentage, one decimal under 10%, whole numbers above: "+6.8%", "−24%". */
+export function formatPercent(n: number): string {
+  const abs = Math.abs(n);
+  const text = abs < 10 ? abs.toFixed(1).replace(/\.0$/, '') : Math.round(abs).toString();
+  return `${n < 0 ? '−' : n > 0 ? '+' : ''}${text}%`;
+}
