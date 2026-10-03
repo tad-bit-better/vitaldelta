@@ -1,4 +1,4 @@
-import { detectDrift, markers, percentChange, rangeStatus, type Drift, type RangeStatus } from '@vitaldelta/extraction';
+import { detectDrift, effectiveRange, markers, percentChange, rangeStatus, type Drift, type RangeSource, type RangeStatus, type Sex } from '@vitaldelta/extraction';
 import type { Report, Result } from '../storage/types';
 
 export type Point = {
@@ -10,8 +10,13 @@ export type Point = {
   value: number;
   unit: string | null;
   comparator: Result['comparator'];
+  /** The report's range, or the guideline's when the report printed none (see rangeSource). */
   refLow: number | null;
   refHigh: number | null;
+  refLowStrict: boolean;
+  refHighStrict: boolean;
+  rangeSource: RangeSource;
+  guidelineSource: string | null;
   status: RangeStatus;
 };
 
@@ -44,9 +49,10 @@ const byDate = (a: Point, b: Point) => a.date.localeCompare(b.date);
 /**
  * Groups saved results into one series per test across reports. Only results in the
  * same unit are compared: the marker's standard unit when recognised, otherwise the
- * unit used most often for that printed name.
+ * unit used most often for that printed name. Results whose report printed no range get
+ * the guideline range, if the test has one (worked out here, so it's never stored).
  */
-export function buildSeries(reports: Report[], results: Result[]): TestSeries[] {
+export function buildSeries(reports: Report[], results: Result[], sex: Sex | null = null): TestSeries[] {
   const reportById = new Map(reports.map((r) => [r.id, r]));
   const groups = new Map<string, { markerId: string | null; name: string; points: Point[] }>();
 
@@ -54,6 +60,7 @@ export function buildSeries(reports: Report[], results: Result[]): TestSeries[] 
     const report = reportById.get(r.reportId);
     if (!report) continue;
     const key = seriesKey(r);
+    const range = effectiveRange(r, sex);
     const group = groups.get(key) ?? { markerId: r.markerId, name: r.name, points: [] };
     group.points.push({
       resultId: r.id,
@@ -63,9 +70,8 @@ export function buildSeries(reports: Report[], results: Result[]): TestSeries[] 
       value: r.value,
       unit: r.unit,
       comparator: r.comparator,
-      refLow: r.refLow,
-      refHigh: r.refHigh,
-      status: rangeStatus(r),
+      ...range,
+      status: rangeStatus({ value: r.value, comparator: r.comparator, ...range }),
     });
     groups.set(key, group);
   }

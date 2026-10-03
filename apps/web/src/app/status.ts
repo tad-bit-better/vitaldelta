@@ -1,4 +1,4 @@
-import type { RangeStatus } from '@vitaldelta/extraction';
+import { rangeName, type RangeSource, type RangeStatus } from '@vitaldelta/extraction';
 import { formatNumber, formatPercent } from './format';
 import type { Point } from './series';
 
@@ -19,24 +19,37 @@ export function tone(status: RangeStatus): 'out' | 'near' | 'ok' | 'none' {
   return status === 'in-range' ? 'ok' : 'none';
 }
 
-/** "13–17", "≤ 200", "≥ 40", or null when the report printed no range. */
-export function rangeValue({ refLow, refHigh }: Pick<Point, 'refLow' | 'refHigh'>): string | null {
-  if (refLow !== null && refHigh !== null) return `${formatNumber(refLow)}–${formatNumber(refHigh)}`;
-  if (refHigh !== null) return `≤ ${formatNumber(refHigh)}`;
-  if (refLow !== null) return `≥ ${formatNumber(refLow)}`;
-  return null;
+type RangeFields = Pick<Point, 'refLow' | 'refHigh'> & Partial<Pick<Point, 'refLowStrict' | 'refHighStrict' | 'rangeSource' | 'guidelineSource'>>;
+
+/** "13–17", "≤ 200", "< 5.7", "≥ 70 and < 100", or null when there's no range. */
+export function rangeValue({ refLow, refHigh, refLowStrict, refHighStrict }: RangeFields): string | null {
+  const low = refLow === null ? null : `${refLowStrict ? '>' : '≥'} ${formatNumber(refLow)}`;
+  const high = refHigh === null ? null : `${refHighStrict ? '<' : '≤'} ${formatNumber(refHigh)}`;
+  if (refLow !== null && refHigh !== null) {
+    return refLowStrict || refHighStrict ? `${low} and ${high}` : `${formatNumber(refLow)}–${formatNumber(refHigh)}`;
+  }
+  return high ?? low;
 }
 
-export function rangeText(point: Pick<Point, 'refLow' | 'refHigh'>): string {
+/** "Range 13–17", "Guideline range < 5.7 (ADA)" or "No range on report". */
+export function rangeText(point: RangeFields): string {
   const range = rangeValue(point);
-  return range ? `Range ${range}` : 'No range on report';
+  if (!range) return 'No range on report';
+  return point.rangeSource === 'guideline' ? `Guideline range ${range} (${point.guidelineSource})` : `Range ${range}`;
+}
+
+/** For tables with a range column: "13–17", "< 5.7 · ADA guideline" or "None printed". */
+export function rangeCell(point: RangeFields): string {
+  const range = rangeValue(point);
+  if (!range) return 'None printed';
+  return point.rangeSource === 'guideline' ? `${range} · ${point.guidelineSource} guideline` : range;
 }
 
 export type Tone = ReturnType<typeof tone>;
 export type StatusOrder = 'attention-first' | 'in-range-first';
 
 const GROUP_LABEL: Record<Tone, string> = {
-  out: 'Outside the report’s range',
+  out: 'Outside the range',
   near: 'Near a limit',
   ok: 'In range',
   none: 'No range on the report',
@@ -56,14 +69,20 @@ export function groupByStatus<T>(items: T[], statusOf: (item: T) => RangeStatus,
 const direction = (status: RangeStatus) => (status === 'above' || status === 'near-high' ? 'upper' : 'lower');
 
 /** Headline for a notable change; says what moved, never what it means. */
-export function changeHeadline(name: string, kind: 'now-outside' | 'now-near' | 'back-in-range' | 'large-change', latest: RangeStatus, percent: number): string {
+export function changeHeadline(
+  name: string,
+  kind: 'now-outside' | 'now-near' | 'back-in-range' | 'large-change',
+  latest: RangeStatus,
+  percent: number,
+  source: RangeSource = 'report',
+): string {
   switch (kind) {
     case 'now-outside':
-      return `${name} moved ${latest === 'above' ? 'above' : 'below'} the report’s range`;
+      return `${name} moved ${latest === 'above' ? 'above' : 'below'} ${rangeName(source)}`;
     case 'now-near':
       return `${name} moved near the ${direction(latest)} limit`;
     case 'back-in-range':
-      return `${name} is back within the report’s range`;
+      return `${name} is back within ${rangeName(source)}`;
     case 'large-change':
       return `${name} changed by ${formatPercent(percent)}`;
   }

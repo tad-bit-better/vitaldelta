@@ -4,11 +4,21 @@ import { formatDate, formatNumber, formatPercent } from './format';
 import Link from './Link';
 import { patientPath } from './router';
 import { buildSeries, sinceLastReport, type Point, type TestSeries } from './series';
-import { changeHeadline, driftText, groupByStatus, rangeValue, STATUS, tone } from './status';
+import { changeHeadline, driftText, groupByStatus, rangeCell, STATUS, tone } from './status';
+
+/** Full names for the guideline citations in the dictionary. */
+const GUIDELINE_NAMES: Record<string, string> = {
+  ADA: 'American Diabetes Association',
+  'NCEP ATP III': 'National Cholesterol Education Program (ATP III)',
+  NLA: 'National Lipid Association',
+  KDIGO: 'Kidney Disease: Improving Global Outcomes',
+  'AHA/CDC': 'American Heart Association / CDC',
+  IOM: 'Institute of Medicine (now National Academy of Medicine)',
+};
 
 const value = (p: Point) => `${p.comparator ?? ''}${formatNumber(p.value)}${p.unit ? ` ${p.unit}` : ''}`;
 
-/** Every test's latest value against its own report's range, with the previous result. */
+/** Every test's latest value against its own report's range (or a guideline's), with the previous result. */
 function SummaryTable({ caption, tests }: { caption: string; tests: TestSeries[] }) {
   return (
     <div className="app-table-wrap">
@@ -19,7 +29,7 @@ function SummaryTable({ caption, tests }: { caption: string; tests: TestSeries[]
             <th scope="col">Test</th>
             <th scope="col">Latest</th>
             <th scope="col">Date</th>
-            <th scope="col">Report’s range</th>
+            <th scope="col">Range</th>
             <th scope="col">Status</th>
             <th scope="col">Previous</th>
             <th scope="col">Change</th>
@@ -31,7 +41,7 @@ function SummaryTable({ caption, tests }: { caption: string; tests: TestSeries[]
               <th scope="row">{t.name}</th>
               <td className="summary-num">{value(t.latest)}</td>
               <td>{formatDate(t.latest.date)}</td>
-              <td className="summary-num">{rangeValue(t.latest) ?? '—'}</td>
+              <td className="summary-num">{rangeCell(t.latest)}</td>
               <td>
                 <span className={`app-status app-status-${tone(t.latest.status)}`}>
                   <span aria-hidden="true">{STATUS[t.latest.status].icon}</span> {STATUS[t.latest.status].label}
@@ -56,7 +66,7 @@ function SummaryTable({ caption, tests }: { caption: string; tests: TestSeries[]
 }
 
 /**
- * One page to take to a doctor's visit: what's outside or near the report's range, what
+ * One page to take to a doctor's visit: what's outside or near its range, what
  * changed since the last report, slow steady moves, then everything else. Prints (or
  * saves as PDF) through the browser; the print stylesheet hides the app around it.
  */
@@ -85,11 +95,12 @@ export default function Summary({ profileId }: { profileId: string }) {
   }
 
   const { reports, results } = forProfile(data, profileId);
-  const tests = buildSeries(reports, results);
+  const tests = buildSeries(reports, results, profile.sex);
   const groups = groupByStatus(tests, (t) => t.latest.status, 'attention-first');
   const attention = groups.filter((g) => g.tone === 'out' || g.tone === 'near').flatMap((g) => g.items);
   const others = groups.filter((g) => g.tone === 'ok' || g.tone === 'none').flatMap((g) => g.items);
   const since = sinceLastReport(reports, tests);
+  const guidelines = [...new Set(tests.map((t) => t.latest.guidelineSource).filter((g): g is string => g !== null))];
   const drifting = tests.filter((t) => t.drift);
   const dates = reports.map((r) => r.collectedAt).sort();
   const labs = [...new Set(reports.map((r) => r.labName).filter(Boolean))];
@@ -128,9 +139,9 @@ export default function Summary({ profileId }: { profileId: string }) {
       ) : (
         <>
           {attention.length > 0 ? (
-            <SummaryTable caption={`Outside or near the report’s range (${attention.length})`} tests={attention} />
+            <SummaryTable caption={`Outside or near the range (${attention.length})`} tests={attention} />
           ) : (
-            <p>Every latest value is within its report’s range.</p>
+            <p>Every latest value is within its range.</p>
           )}
 
           {(since?.previousDate || drifting.length > 0) && (
@@ -146,7 +157,7 @@ export default function Summary({ profileId }: { profileId: string }) {
                     <ul>
                       {since.changes.map(({ series: s, kind }) => (
                         <li key={s.key}>
-                          {changeHeadline(s.name, kind, s.latest.status, s.change!.percent)}:{' '}
+                          {changeHeadline(s.name, kind, s.latest.status, s.change!.percent, s.latest.rangeSource)}:{' '}
                           {formatNumber(s.change!.from.value)} → {formatNumber(s.latest.value)} {s.unit}
                           {kind === 'large-change' ? '' : ` (${formatPercent(s.change!.percent)})`}
                         </li>
@@ -175,8 +186,12 @@ export default function Summary({ profileId }: { profileId: string }) {
       )}
 
       <footer className="summary-foot">
-        Each value is compared only with the reference range printed on its own report; change is from the previous
-        result in the same unit. Values were read from the report PDFs and checked by the patient; the original reports
+        Each value is compared with the reference range printed on its own report
+        {guidelines.length > 0 &&
+          `, or where the report printed none, with the guideline limit marked “guideline” (${guidelines
+            .map((g) => (GUIDELINE_NAMES[g] ? `${g}: ${GUIDELINE_NAMES[g]}` : g))
+            .join('; ')})`}
+        ; change is from the previous result in the same unit. Values were read from the report PDFs and checked by the patient; the original reports
         are the reference. Made with VitalDelta on the patient’s device. Not medical advice.
       </footer>
     </section>

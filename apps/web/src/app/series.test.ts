@@ -15,6 +15,20 @@ const result = (reportId: string, overrides: Partial<Result>): Result => ({
 const reports = [report('a', '2024-01-10'), report('b', '2023-06-01'), report('c', '2024-09-15')];
 
 describe('buildSeries', () => {
+  it('uses the guideline range only where the report printed none, and says so', () => {
+    const series = buildSeries(reports, [
+      result('a', { markerId: '4548-4', name: 'HbA1c', unit: '%', value: 6.1, refLow: null, refHigh: null }),
+      result('c', { markerId: '4548-4', name: 'HbA1c', unit: '%', value: 6.1, refLow: 4, refHigh: 6.5 }),
+      result('c', { markerId: '2085-9', name: 'HDL cholesterol', unit: 'mg/dL', value: 45, refLow: null, refHigh: null }),
+    ], 'female');
+    const [hba1c, hdl] = series;
+    expect(hba1c.points.map((p) => [p.rangeSource, p.status])).toEqual([['guideline', 'above'], ['report', 'in-range']]);
+    expect(hba1c.points[0]).toMatchObject({ refHigh: 5.7, refHighStrict: true, guidelineSource: 'ADA' });
+    expect(hdl.latest).toMatchObject({ refLow: 50, status: 'below', rangeSource: 'guideline' });
+    // Without a known sex, sex-specific limits aren't guessed.
+    expect(buildSeries(reports, [result('c', { markerId: '2085-9', unit: 'mg/dL', refLow: null, refHigh: null })])[0].latest.status).toBe('no-range');
+  });
+
   it('groups by marker across reports, oldest first, with status and change', () => {
     const [hb] = buildSeries(reports, [
       result('a', { value: 13.2 }),

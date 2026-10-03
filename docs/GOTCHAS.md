@@ -122,9 +122,15 @@ what happens, why, and what to do.
 
 ## Insights and charts
 
-- **Flags compare a value only with the range printed on its own report** (`rangeStatus` in
-  `packages/extraction/src/flags.ts`), never a dictionary default. Wording must stay
-  non-diagnostic ("above the report's range by 24%"); `describeStatus` is the one place for it.
+- **Flags compare a value with the range printed on its own report** (`rangeStatus` in
+  `packages/extraction/src/flags.ts`). Only when the report printed none, and only for the few
+  tests with a guideline limit (`docs/dictionary.md`), the guideline range is used instead, and
+  every screen says so. Wording must stay non-diagnostic ("above the report's range by 24%",
+  "above the guideline range"); `describeStatus` / `rangeText` are the places for it.
+- **Guideline ranges are worked out on display** (`buildSeries` → `effectiveRange`), never
+  saved into results, so `refLow`/`refHigh` in storage always mean "what the report printed".
+  `buildSeries` needs the patient's sex for sex-specific limits (HDL); pass `profile.sex`.
+- **Guideline bounds can be strict** ("< 5.7": 5.7 is above). Report ranges are inclusive.
 - **Status always has three cues: colour, shape/icon and a label** (▲▼ outside, ◆ near a
   limit, ● in range, ○ no range). Green vs amber is only ~6.6 apart for colour-blind readers,
   so never show status by colour alone. Status colours were checked with the dataviz

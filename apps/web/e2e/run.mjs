@@ -40,7 +40,7 @@ const REPORTS = {
   'r1.pdf': { patient: ARJUN, date: '05/01/2023', rows: [['Haemoglobin', '14.6', 'g/dL', '13.0 - 17.0'], ['Total Cholesterol', '182', 'mg/dL', '< 200'], ['Homocysteine', '12', 'umol/L', '5 - 15']] },
   'r2.pdf': { patient: ARJUN, date: '12/07/2023', rows: [['Hemoglobin (Hb)', '13.3', 'g/dL', '13.5 - 17.5'], ['Cholesterol, Total', '205', 'mg/dL', '< 200']] },
   'r3.pdf': { patient: ARJUN, date: '20/03/2024', rows: [['Haemoglobin', '12.4', 'g/dL', '13.0 - 17.0'], ['Total Cholesterol', '247', 'mg/dL', '< 200'], ['TSH', '4.0', 'uIU/mL', '0.4 - 4.2']] },
-  'p1.pdf': { patient: PRIYA, date: '02/05/2024', rows: [['Haemoglobin', '11.9', 'g/dL', '12.0 - 15.5'], ['TSH', '5.1', 'uIU/mL', '0.4 - 4.2']] },
+  'p1.pdf': { patient: PRIYA, date: '02/05/2024', rows: [['Haemoglobin', '11.9', 'g/dL', '12.0 - 15.5'], ['TSH', '5.1', 'uIU/mL', '0.4 - 4.2'], ['HbA1c', '6.1', '%', '']] },
 };
 
 function writePdf(file, { patient, date, rows }) {
@@ -233,7 +233,7 @@ try {
   await evaluate(`[...document.querySelectorAll('.app-patient')].find((a) => a.innerText.includes('Arjun')).click()`);
   await sleep(400);
   const groups = await evaluate(`[...document.querySelectorAll('.app-test-group h3')].map((h) => h.innerText)`);
-  check(groups[0]?.startsWith('Outside the report’s range'), 'tests needing attention listed first');
+  check(groups[0]?.startsWith('Outside the range'), 'tests needing attention listed first');
   check((await text('.app-highlights'))?.includes('Total cholesterol changed by +20%'), 'since-last-report change shown');
   check((await text('.app-highlights'))?.includes('Falling across your last 3 results'), 'steady trend shown');
   check((await layout()) === 'grid', 'tests shown as cards by default');
@@ -256,12 +256,24 @@ try {
   await sleep(600);
   check((await text('.app-content h1')) === 'Arjun Mehta', 'back button returns to the patient');
 
+  // A report with no printed range falls back to the guideline range, and says so.
+  await evaluate(`[...document.querySelectorAll('.app-patient')].find((a) => a.innerText.includes('Priya')).click()`);
+  await sleep(400);
+  const card = await evaluate(`[...document.querySelectorAll('.app-test')].find((a) => a.innerText.startsWith('HbA1c'))?.innerText`);
+  check(card?.includes('Above range'), 'HbA1c without a printed range is flagged against the guideline');
+  await evaluate(`[...document.querySelectorAll('.app-test')].find((a) => a.innerText.startsWith('HbA1c')).click()`);
+  await waitFor(`!!document.querySelector('.chart svg')`, 'HbA1c chart');
+  const page = await text('.app-content');
+  check(page?.includes('Above the guideline range by 7%') && page.includes('< 5.7 · ADA guideline'), 'test page names the guideline and its source');
+  await evaluate(`[...document.querySelectorAll('.app-patient')].find((a) => a.innerText.includes('Arjun')).click()`);
+  await sleep(400);
+
   // ---------- Doctor summary ----------
   console.log('\nDoctor summary');
   await clickLink('Doctor summary');
   await waitFor(`!!document.querySelector('.summary-table')`, 'summary table');
   const captions = await evaluate(`[...document.querySelectorAll('.summary-table caption')].map((c) => c.innerText)`);
-  check(captions[0]?.startsWith('Outside or near the report’s range (3)') && captions[1]?.startsWith('Other tests'), 'attention table first, then other tests');
+  check(captions[0]?.startsWith('Outside or near the range (3)') && captions[1]?.startsWith('Other tests'), 'attention table first, then other tests');
   const firstTable = await text('.summary-table');
   check(firstTable?.includes('Total cholesterol') && firstTable.includes('+20%') && firstTable.includes('▲ Above range'), 'summary rows show value, change and status label');
   check((await text('.summary-notes'))?.includes('Haemoglobin: falling across the last 3 results'), 'summary lists steady trends');

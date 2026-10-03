@@ -14,6 +14,7 @@ Done when: live at a public URL with demo mode, linked from the resume.
 - [x] Day 7: Dashboard: flagged first, sparklines, changed since last report, drift
 - [x] Day 7 (added): Multiple patients: sidebar, patient confirmed on every report (name/sex suggestions and mismatch warnings), duplicate-report check, rename/delete patient
 - [x] Day 8: Doctor summary with print stylesheet (save as PDF); JSON backup export/import; Delete all data (IndexedDB, caches, service worker)
+- [x] Day 8 (added): Grid/list layout for tests; guideline ranges for 10 tests (HbA1c, fasting glucose, lipids, eGFR, hs-CRP, vitamin D) when a report prints no range
 - [ ] Day 9: Demo mode with synthetic reports; PWA + offline; `navigator.storage.persist()`; onboarding (storage choice, shared-computer note, data is per-browser, iPhone install nudge, not-medical-advice); accessibility
 - [ ] Day 10: README with architecture diagram + demo GIF (mention the CSP privacy guarantee), custom subdomain, LinkedIn post, add to resume
 
@@ -21,6 +22,9 @@ Done when: live at a public URL with demo mode, linked from the resume.
 Things decided or found in conversation that aren't done yet.
 - [ ] Day 9 is next: demo mode, PWA + offline, storage.persist(), onboarding, accessibility. Delete all data already clears caches and service workers, so it covers the PWA once added
 - [ ] Verify the 71 LOINC codes against loinc.org (written from memory; only check digits are tested). In particular 1989-3 (Vitamin D: D3 only or total?)
+- [ ] Verify the 10 guideline ranges (table in docs/dictionary.md) against the current ADA, NCEP ATP III, NLA, KDIGO, AHA/CDC and IOM documents, as part of the medical review
+- [ ] Add markers with guideline limits: urine albumin/creatinine ratio (KDIGO < 30 mg/g), 2-hour / post-meal glucose (ADA < 140 mg/dL)
+- [ ] Maybe later: read the lab's own "Desirable / Borderline / High" guidance table as the report's range, instead of dropping it
 - [ ] Verify unit conversion factors against a published SI table (AMA Manual of Style); have someone medical review plausibility bounds
 - [ ] MPV and PDW print "%" on the owner's lab report; confirm under "Raw rows" on /dev/rows whether the lab really prints % (then they stay unrecognised) or the parser picked the wrong token
 - [ ] Owner's browser has a "Me" patient created before multi-patient support; rename it or delete and re-add the report

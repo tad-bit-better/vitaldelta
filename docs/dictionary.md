@@ -13,6 +13,7 @@ Extraction never uses per-lab templates; all lab-specific knowledge lives here a
 | `unit` | Standard unit values are converted to (canonical form from `src/units.ts`) |
 | `conversions` | Other units labs use → factor (or factor + offset) into `unit` |
 | `plausibleMin` / `plausibleMax` | Wide bounds; values outside are almost certainly misreads, not diagnoses |
+| `guideline` | Optional. Limits from a clinical guideline, used only when a report prints no range (below) |
 
 ## Synonym policy
 
@@ -66,11 +67,60 @@ conversion or plausibility check). They're the main signal for what to add next.
 - Plausibility bounds are in the standard unit and are checked only after conversion.
   An unrecognised unit is never guessed: the value stays as printed and is flagged for review.
 
+## Guideline ranges
+
+Most reference ranges belong to the lab: they depend on its method and the patient's age
+and sex, so the app never invents one. A few tests are different: their limits come from
+clinical guidelines and labs print the same numbers. For those, a `guideline` range is used
+when the report printed no range (often because the lab printed a "Desirable / Borderline /
+High" table instead, which extraction drops as guidance).
+
+| Test | Limit | Source |
+|---|---|---|
+| HbA1c | < 5.7 % | ADA Standards of Care (normal; 5.7–6.4 prediabetes) |
+| Fasting glucose | ≥ 70 and < 100 mg/dL | ADA (< 100 normal fasting; < 70 is the hypoglycaemia alert level) |
+| Total cholesterol | < 200 mg/dL | NCEP ATP III (desirable) |
+| LDL cholesterol | < 100 mg/dL | NCEP ATP III (optimal) |
+| Triglycerides | < 150 mg/dL | NCEP ATP III (normal) |
+| Non-HDL cholesterol | < 130 mg/dL | National Lipid Association (desirable) |
+| HDL cholesterol | ≥ 40 mg/dL (male), ≥ 50 mg/dL (female) | NCEP ATP III (low HDL; the female limit is from its metabolic syndrome criteria) |
+| eGFR | ≥ 60 mL/min/1.73m² | KDIGO 2012 (below 60 is stage G3a or lower; 60–89 is G2, not flagged on its own) |
+| hs-CRP | ≤ 3 mg/L | AHA/CDC 2003 (cardiovascular risk: < 1 low, 1–3 average, > 3 high) |
+| Vitamin D (25-OH) | ≥ 20 ng/mL | IOM 2011 (below 20 is inadequate; IOM and the Endocrine Society agree on this floor, but not on 30, so 30 isn't used and there's no upper limit) |
+
+Considered and left out, because the lab sets the range or guidelines disagree: haemoglobin and
+the rest of the CBC, TSH and thyroid hormones, liver enzymes, creatinine, urea, electrolytes,
+calcium, uric acid (gout targets are treatment goals, not normal ranges), ferritin and iron
+studies, vitamin B12, CRP (not hs-CRP), random glucose, VLDL and the cholesterol ratios (no
+guideline cut-off; labs print their own).
+
+Worth adding as new markers with guideline limits: urine albumin/creatinine ratio (KDIGO < 30
+mg/g) and 2-hour glucose (ADA < 140 mg/dL for the OGTT; labs often apply it to post-meal
+glucose too). They need LOINC codes and synonyms first.
+
+Rules:
+- **The report's range always wins**, even a one-sided one. The guideline is only a fallback.
+- **Only add a guideline when labs don't set the limit themselves**: a published, method-
+  independent cut-off. Haemoglobin, TSH, liver enzymes, B12 etc. never get one. Contested
+  limits (vitamin D) stay out.
+- **Strict bounds** (`highStrict` / `lowStrict`) mean the limit itself is outside, matching
+  how guidelines are written ("< 5.7").
+- **Sex-specific limits** go in `bySex`; with no known sex, no guideline range is used.
+- **The app always says which range it used** ("Above the guideline range", "< 200 · NCEP ATP
+  III guideline"), and the doctor summary names each guideline in full.
+- Guideline ranges are applied when displaying (`effectiveRange` in `src/guideline.ts`), never
+  stored, so saved reports pick up changes here and nothing needs migrating.
+- `dictionary.test.ts` lists the markers allowed to have one; adding a guideline means
+  updating that list and this table together.
+
 ## Known open questions
 
 - All codes were written from memory and pass only the check-digit test; verify against
   loinc.org (step 2 above).
 - `1989-3` may be 25-hydroxyvitamin D3 specifically rather than total D2+D3.
+- Guideline limits above were written from memory; check them against the current ADA
+  Standards of Care, NCEP ATP III / NLA, KDIGO, AHA/CDC and IOM documents, and have someone
+  medical review them.
 - eGFR variants (CKD-EPI, MDRD) have different LOINC codes but share one marker here.
 - "Neutrophils", "Lymphocytes" etc. are the % markers; absolute counts aren't in the
   dictionary yet. Matching rejects a name match whose unit can't convert (e.g. 10^3/µL

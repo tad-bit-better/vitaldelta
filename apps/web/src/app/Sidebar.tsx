@@ -20,7 +20,7 @@ export default function Sidebar({ activeId, dataActive }: { activeId: string | n
         <ul className="app-patients">
           {data.profiles.map((p) => {
             const { reports, results } = forProfile(data, p.id);
-            const outside = buildSeries(reports, results).filter((s) => tone(s.latest.status) === 'out').length;
+            const outside = buildSeries(reports, results, p.sex).filter((s) => tone(s.latest.status) === 'out').length;
             return (
               <li key={p.id}>
                 <Link

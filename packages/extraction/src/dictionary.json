@@ -348,6 +348,12 @@
       },
       "plausibleMin": 10,
       "plausibleMax": 1500,
+      "guideline": {
+        "source": "ADA",
+        "low": 70,
+        "high": 100,
+        "highStrict": true
+      },
       "synonyms": [
         "Glucose Fasting",
         "Fasting Blood Sugar",
@@ -391,6 +397,11 @@
       },
       "plausibleMin": 2,
       "plausibleMax": 20,
+      "guideline": {
+        "source": "ADA",
+        "high": 5.7,
+        "highStrict": true
+      },
       "synonyms": [
         "A1c",
         "Haemoglobin A1c",
@@ -412,6 +423,11 @@
       },
       "plausibleMin": 30,
       "plausibleMax": 1000,
+      "guideline": {
+        "source": "NCEP ATP III",
+        "high": 200,
+        "highStrict": true
+      },
       "synonyms": [
         "Cholesterol",
         "Cholesterol Total",
@@ -430,6 +446,17 @@
       },
       "plausibleMin": 5,
       "plausibleMax": 200,
+      "guideline": {
+        "source": "NCEP ATP III",
+        "bySex": {
+          "male": {
+            "low": 40
+          },
+          "female": {
+            "low": 50
+          }
+        }
+      },
       "synonyms": [
         "HDL",
         "HDL-C",
@@ -450,6 +477,11 @@
       },
       "plausibleMin": 5,
       "plausibleMax": 600,
+      "guideline": {
+        "source": "NCEP ATP III",
+        "high": 100,
+        "highStrict": true
+      },
       "synonyms": [
         "LDL",
         "LDL-C",
@@ -474,6 +506,11 @@
       },
       "plausibleMin": 10,
       "plausibleMax": 5000,
+      "guideline": {
+        "source": "NCEP ATP III",
+        "high": 150,
+        "highStrict": true
+      },
       "synonyms": [
         "Triglyceride",
         "TG",
@@ -508,6 +545,11 @@
       },
       "plausibleMin": 10,
       "plausibleMax": 1000,
+      "guideline": {
+        "source": "NLA",
+        "high": 130,
+        "highStrict": true
+      },
       "synonyms": [
         "Non-HDL",
         "Non-HDL-C",
@@ -600,6 +642,10 @@
       "unit": "mL/min/1.73m²",
       "plausibleMin": 1,
       "plausibleMax": 200,
+      "guideline": {
+        "source": "KDIGO",
+        "low": 60
+      },
       "synonyms": [
         "Estimated GFR",
         "GFR Estimated",
@@ -955,6 +1001,10 @@
       },
       "plausibleMin": 1,
       "plausibleMax": 200,
+      "guideline": {
+        "source": "IOM",
+        "low": 20
+      },
       "synonyms": [
         "Vitamin D",
         "Vit D",
@@ -1064,6 +1114,10 @@
       "unit": "mg/L",
       "plausibleMin": 0,
       "plausibleMax": 50,
+      "guideline": {
+        "source": "AHA/CDC",
+        "high": 3
+      },
       "synonyms": [
         "High Sensitivity CRP",
         "High Sensitive CRP",

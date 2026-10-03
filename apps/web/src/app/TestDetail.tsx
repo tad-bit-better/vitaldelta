@@ -5,7 +5,7 @@ import Link from './Link';
 import { patientPath } from './router';
 import { buildSeries, type Point } from './series';
 import StatusBadge from './StatusBadge';
-import { rangeText } from './status';
+import { rangeCell, rangeText } from './status';
 import TrendChart from './TrendChart';
 
 const markerById = new Map(markers.map((m) => [m.id, m]));
@@ -15,7 +15,7 @@ export default function TestDetail({ profileId, testKey }: { profileId: string; 
   const data = useAppData();
   const profile = data.profiles.find((p) => p.id === profileId);
   const { reports, results } = forProfile(data, profileId);
-  const series = buildSeries(reports, results).find((s) => s.key === testKey);
+  const series = buildSeries(reports, results, profile?.sex ?? null).find((s) => s.key === testKey);
 
   if (!profile || !series) {
     return (
@@ -29,7 +29,8 @@ export default function TestDetail({ profileId, testKey }: { profileId: string; 
 
   const { name, unit, points, otherUnits, latest, change } = series;
   const marker = series.markerId ? markerById.get(series.markerId) : undefined;
-  const ranges = new Set(points.map((p) => rangeText(p)));
+  const ranges = new Set(points.filter((p) => p.rangeSource === 'report').map((p) => rangeText(p)));
+  const guidelines = [...new Set(points.map((p) => p.guidelineSource).filter((s): s is string => s !== null))];
   const all = [...points, ...otherUnits].sort((a, b) => b.date.localeCompare(a.date));
 
   return (
@@ -67,7 +68,8 @@ export default function TestDetail({ profileId, testKey }: { profileId: string; 
           {points.length === 1 && <p className="app-muted">Add another report with this test to see a trend.</p>}
           <TrendChart name={name} unit={unit} points={points} />
           <p className="app-note">
-            Shaded: the reference range printed on each report.
+            Shaded: the reference range printed on each report
+            {guidelines.length > 0 && `, or where a report printed none, the ${guidelines.join(', ')} guideline range`}.
             {ranges.size > 1 && ' Ranges differ between reports, often because labs use different methods.'}
           </p>
         </div>
@@ -81,7 +83,7 @@ export default function TestDetail({ profileId, testKey }: { profileId: string; 
               <tr>
                 <th scope="col">Date</th>
                 <th scope="col">Value</th>
-                <th scope="col">Report’s range</th>
+                <th scope="col">Range</th>
                 <th scope="col">Status</th>
                 <th scope="col">Lab</th>
               </tr>
@@ -112,7 +114,7 @@ function ResultRow({ point: p, comparable }: { point: Point; comparable: boolean
         {formatNumber(p.value)} {p.unit}
         {!comparable && <span className="app-muted"> (different unit)</span>}
       </td>
-      <td>{rangeText(p).replace(/^Range /, '')}</td>
+      <td>{rangeCell(p)}</td>
       <td>
         <StatusBadge status={p.status} />
       </td>

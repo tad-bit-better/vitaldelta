@@ -33,7 +33,7 @@ export default function Highlights({ profileId, summary, tests }: Props) {
                         {STATUS[s.latest.status].icon}
                       </span>
                       <span>
-                        <strong>{changeHeadline(s.name, kind, s.latest.status, s.change!.percent)}</strong>
+                        <strong>{changeHeadline(s.name, kind, s.latest.status, s.change!.percent, s.latest.rangeSource)}</strong>
                         <span className="app-muted">
                           {formatNumber(s.change!.from.value)} → {formatNumber(s.latest.value)} {s.unit}
                           {kind === 'large-change' ? '' : ` (${formatPercent(s.change!.percent)})`} · previous result{' '}

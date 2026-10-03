@@ -27,7 +27,7 @@ export default function PatientDashboard({ profileId, notice }: { profileId: str
   }
 
   const { reports, results } = forProfile(data, profileId);
-  const tests = buildSeries(reports, results);
+  const tests = buildSeries(reports, results, profile.sex);
   const counts = new Map<string, number>();
   for (const r of results) counts.set(r.reportId, (counts.get(r.reportId) ?? 0) + 1);
   const otherNames = profile.aliases.filter((a) => a.toLowerCase() !== profile.name.toLowerCase());
