@@ -1,6 +1,8 @@
 import { fromPdfJsItem, type TextItem } from '@vitaldelta/extraction';
-import { getDocument, GlobalWorkerOptions, PasswordException, PasswordResponses } from 'pdfjs-dist';
-import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+// The "legacy" build, which fills in newer JavaScript features: the modern build uses some
+// (e.g. Uint8Array.prototype.toHex) that older iOS Safari lacks, and some PDFs failed only on iPhone.
+import { getDocument, GlobalWorkerOptions, PasswordException, PasswordResponses } from 'pdfjs-dist/legacy/build/pdf.mjs';
+import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url';
 
 // pdf.js parses in its own Web Worker, bundled and served from our origin.
 GlobalWorkerOptions.workerSrc = workerUrl;

@@ -28,6 +28,13 @@ what happens, why, and what to do.
 - **pdf.js's image-decoding WASM isn't shipped.** Text extraction doesn't need it, and it
   would require `'wasm-unsafe-eval'` in the CSP. If OCR or image decoding is ever added,
   that's a CSP decision.
+- **The web app uses pdf.js's legacy build** (`pdfjs-dist/legacy/build/...`, like the harness).
+  The modern build relies on very new JavaScript (`Uint8Array.prototype.toHex`, `Math.sumPrecise`,
+  `Map.prototype.getOrInsert`) that older iOS Safari lacks; some PDFs (ones whose fonts reach those
+  code paths) failed only on iPhone while Android worked. The legacy build polyfills them (~110 KB more).
+  Every iPhone/iPad browser, Chrome included, runs Apple's WebKit, so test iOS by iOS version.
+- **When a PDF can't be read, the upload screen shows "Technical details"** (pdf.js's error and the
+  browser version, never report content). Ask for that line when a report fails on someone's device.
 - **pdf.js 6 API changes from older docs**: `isEvalSupported` no longer exists, and
   `destroy()` is on the loading task, not the document.
 
@@ -256,6 +263,13 @@ what happens, why, and what to do.
 - **Plausibility bounds are in the marker's standard unit**, checked only after conversion.
 - **Don't list same-kind unit conversions in the dictionary** (g/L ↔ g/dL, pmol/L ↔ nmol/L,
   cell counts); they're generic in `units.ts`, and a test rejects them.
+- **"Abbreviation - full name"** ("TSH -Thyroid-Stimulating Hormone"): a dash with a space on at
+  least one side splits the name; it matches when the parts agree, and an abbreviation-only match is
+  sent for review ("Bilirubin - Conjugated" must never become total bilirubin).
+- **Saved "not in our list" results are matched again when shown** (`resolveMarkerId` in
+  `series.ts`), so a name the matcher learns later joins the test's history. Only exact matches whose
+  unit is already the marker's standard unit; stored data is never rewritten.
+- **A flag in its own column before the value** ("TSH | H | 5.2") is the value's flag, not part of the name.
 - **Fuzzy name matching requires short words to match exactly and in order**
   (Vitamin B ≠ Vitamin D, LDL/HDL ≠ HDL/LDL). Short abbreviations never fuzzy-match.
 - **"Neutrophils" etc. are ambiguous** (% or absolute count); the unit decides. A name match

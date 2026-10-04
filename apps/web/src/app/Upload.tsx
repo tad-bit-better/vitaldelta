@@ -21,6 +21,20 @@ export type Extracted = {
   patient: DetectedPatient;
 };
 
+/**
+ * Browser and version for error reports. On iPhone and iPad every browser runs Apple's WebKit,
+ * so what matters there is the iOS version ("iOS 17.4 · Chrome (WebKit)").
+ */
+function browserName(): string {
+  const ua = navigator.userAgent;
+  const ios = ua.match(/(?:iPhone|iPad|CPU) OS (\d+)_(\d+)/);
+  if (ios) {
+    const app = /CriOS/.test(ua) ? 'Chrome' : /FxiOS/.test(ua) ? 'Firefox' : /EdgiOS/.test(ua) ? 'Edge' : 'Safari';
+    return `iOS ${ios[1]}.${ios[2]} · ${app} (WebKit)`;
+  }
+  return ua.match(/(Firefox|Edg|Chrome|Version)\/[\d.]+/)?.[0]?.replace('Version', 'Safari') ?? 'unknown browser';
+}
+
 type Props = {
   onExtracted: (extracted: Extracted) => void;
   onCancel: () => void;
@@ -36,10 +50,14 @@ export default function Upload({ onExtracted, onCancel, sample }: Props) {
   const [stage, setStage] = useState<'reading' | 'finding' | null>(null);
   const busy = stage !== null;
   const [error, setError] = useState<string | null>(null);
+  // What actually failed (pdf.js's error name and message; never the report's content), shown
+  // under the friendly message so a failing PDF can be diagnosed.
+  const [detail, setDetail] = useState<string | null>(null);
 
   async function read(selected: File, pw?: string) {
     setStage('reading');
     setError(null);
+    setDetail(null);
     try {
       const items = await readPdf(await selected.arrayBuffer(), pw);
       // Extraction runs on this thread; let the browser show the new step first.
@@ -61,6 +79,7 @@ export default function Upload({ onExtracted, onCancel, sample }: Props) {
         setError('This PDF has no text. It looks like a scan or photo, which isn’t supported yet.');
       } else {
         setError('We couldn’t read this PDF. It may be damaged or not a PDF.');
+        setDetail(err instanceof Error ? `${err.name}: ${err.message}`.slice(0, 300) : String(err).slice(0, 300));
       }
     } finally {
       setStage(null);
@@ -129,6 +148,12 @@ export default function Upload({ onExtracted, onCancel, sample }: Props) {
       )}
 
       {error && <p className="app-error" role="alert">{error}</p>}
+      {error && detail && (
+        <details className="app-note">
+          <summary>Technical details</summary>
+          <code>{detail}</code> · {browserName()}
+        </details>
+      )}
 
       <div className="app-actions">
         <button type="button" className="app-btn" onClick={onCancel}>Cancel</button>
