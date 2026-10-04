@@ -20,7 +20,8 @@ Done when: live at a public URL with demo mode, linked from the resume.
 
 ## Open items
 Things decided or found in conversation that aren't done yet.
-- [ ] Day 10 is next: README with architecture diagram + demo GIF, LinkedIn post, resume
+- [x] README with architecture diagram, screenshots (docs/images, from the demo data via apps/web/scripts/screenshots.mjs) and the CSP privacy guarantee
+- [ ] Day 10 still to do: demo GIF for the README, LinkedIn post, resume
 - [ ] Verify the 71 LOINC codes against loinc.org (written from memory; only check digits are tested). In particular 1989-3 (Vitamin D: D3 only or total?)
 - [ ] Verify the 10 guideline ranges (table in docs/dictionary.md) against the current ADA, NCEP ATP III, NLA, KDIGO, AHA/CDC and IOM documents, as part of the medical review
 - [ ] Test on a real iPhone (Add to Home Screen, offline) and Android (Install); automated tests cover desktop Chrome only
@@ -30,7 +31,8 @@ Things decided or found in conversation that aren't done yet.
 - [ ] MPV and PDW print "%" on the owner's lab report; confirm under "Raw rows" on /dev/rows whether the lab really prints % (then they stay unrecognised) or the parser picked the wrong token
 - [ ] Owner's browser has a "Me" patient created before multi-patient support; rename it or delete and re-add the report
 - [ ] Lab name isn't auto-detected yet; one PDF per upload
-- [ ] Before launch (Day 10): add the LOINC copyright notice to README and an About page
+- [x] LOINC copyright notice in the README
+- [ ] Before launch: LOINC notice on an About page in the app
 - [ ] Optional: switch Cloudflare DNS to Vercel's newer recommended records; make the vitaldelta.vercel.app redirect a 308
 
 ## After launch
