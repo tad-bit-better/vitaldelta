@@ -209,6 +209,9 @@ async function save() {
 }
 
 for (const domain of ['Runtime', 'Log', 'Page', 'DOM', 'Network']) await send(`${domain}.enable`);
+// Like Safari (every iOS browser): streams can't be looped with `for await`. pdf.js's
+// getTextContent did that, and every PDF failed on iPhone while Chrome was fine.
+await send('Page.addScriptToEvaluateOnNewDocument', { source: 'delete ReadableStream.prototype[Symbol.asyncIterator]; delete ReadableStream.prototype.values;' });
 await send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false });
 
 try {

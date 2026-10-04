@@ -33,6 +33,12 @@ what happens, why, and what to do.
   `Map.prototype.getOrInsert`) that older iOS Safari lacks; some PDFs (ones whose fonts reach those
   code paths) failed only on iPhone while Android worked. The legacy build polyfills them (~110 KB more).
   Every iPhone/iPad browser, Chrome included, runs Apple's WebKit, so test iOS by iOS version.
+- **Don't call `page.getTextContent()`: it fails in every Safari, even Safari 26.** It loops over a
+  ReadableStream with `for await`, which WebKit doesn't support, and the legacy build doesn't
+  polyfill it ("TypeError: undefined is not a function (near '...e of t...')"). `readPdf` reads
+  `page.streamTextContent()` with `getReader()` instead. The e2e deletes
+  `ReadableStream.prototype[Symbol.asyncIterator]` before the app loads, so Chrome catches this.
+  Mac Safari runs the same WebKit as iPhones and is the quickest way to reproduce an iOS failure.
 - **When a PDF can't be read, the upload screen shows "Technical details"** (pdf.js's error and the
   browser version, never report content). Ask for that line when a report fails on someone's device.
 - **pdf.js 6 API changes from older docs**: `isEvalSupported` no longer exists, and

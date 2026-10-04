@@ -1,6 +1,6 @@
 import { fromPdfJsItem, type TextItem } from '@vitaldelta/extraction';
 // The "legacy" build, which fills in newer JavaScript features: the modern build uses some
-// (e.g. Uint8Array.prototype.toHex) that older iOS Safari lacks, and some PDFs failed only on iPhone.
+// (e.g. Uint8Array.prototype.toHex) that older iOS Safari lacks. It doesn't cover everything: see textItems.
 import { getDocument, GlobalWorkerOptions, PasswordException, PasswordResponses } from 'pdfjs-dist/legacy/build/pdf.mjs';
 import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url';
 
@@ -24,6 +24,23 @@ export class PdfNoTextError extends Error {
   constructor() {
     super('PDF has no text (it may be scanned)');
     this.name = 'PdfNoTextError';
+  }
+}
+
+type PdfPage = Awaited<ReturnType<Awaited<ReturnType<typeof getDocument>['promise']>['getPage']>>;
+
+/**
+ * A page's text items. Same as page.getTextContent(), but that loops over a ReadableStream
+ * with `for await`, which Safari (every iOS browser) doesn't support: it threw
+ * "undefined is not a function" for every PDF. Reading the stream by hand works everywhere.
+ */
+async function textItems(page: PdfPage) {
+  const reader = page.streamTextContent().getReader();
+  const items: Awaited<ReturnType<PdfPage['getTextContent']>>['items'] = [];
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) return items;
+    items.push(...value.items);
   }
 }
 
@@ -58,9 +75,8 @@ export async function readPdf(data: ArrayBuffer, password?: string): Promise<Tex
     for (let pageNumber = 1; pageNumber <= doc.numPages; pageNumber++) {
       const page = await doc.getPage(pageNumber);
       const viewport = page.getViewport({ scale: 1 });
-      const content = await page.getTextContent();
       const toViewport = viewport.convertToViewportPoint.bind(viewport);
-      for (const raw of content.items) {
+      for (const raw of await textItems(page)) {
         if ('str' in raw) items.push(fromPdfJsItem(raw, pageNumber, toViewport));
       }
       page.cleanup();
