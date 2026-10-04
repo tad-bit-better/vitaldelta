@@ -40,14 +40,34 @@ export function createMatcher(markers: Marker[] = allMarkers) {
    * then fuzzy for longer names. Also tries the name without its brackets and the
    * bracketed part alone, so "Packed Cell Volume (PCV)" and "ALT (SGPT)" match.
    */
-  return function matchMarker(printedName: string): MarkerMatch | null {
-    const candidates = [printedName, printedName.replace(/\([^)]*\)/g, ' ')];
-    for (const m of printedName.matchAll(/\(([^)]*)\)/g)) candidates.push(m[1]);
-    const unique = [...new Map(candidates.map((c) => [nameKey(c), c])).entries()].filter(([key]) => key);
+  /** The name, the name without brackets, and the bracketed parts, as unique normalised keys. */
+  const variants = (name: string) => {
+    const candidates = [name, name.replace(/\([^)]*\)/g, ' ')];
+    for (const m of name.matchAll(/\(([^)]*)\)/g)) candidates.push(m[1]);
+    return [...new Map(candidates.map((c) => [nameKey(c), c])).entries()].filter(([key]) => key);
+  };
+  const exact = (name: string) => variants(name).map(([key]) => byKey.get(key)).find(Boolean) ?? null;
 
-    for (const [key] of unique) {
-      const marker = byKey.get(key);
-      if (marker) return { marker, method: 'exact', similarity: 1 };
+  return function matchMarker(printedName: string): MarkerMatch | null {
+    const unique = variants(printedName);
+    const whole = exact(printedName);
+    if (whole) return { marker: whole, method: 'exact', similarity: 1 };
+
+    // "TSH - Thyroid Stimulating Hormone": labs print an abbreviation and the full name. Trust
+    // it when the parts agree; when only an abbreviation matches, accept it but have it
+    // reviewed (so "Bilirubin - Conjugated" never silently becomes total bilirubin).
+    // A dash with a space on at least one side separates; "Non-HDL" and "Thyroid-Stimulating" don't split.
+    const parts = printedName.split(/\s+[-–—]\s*|\s*[-–—]\s+/).map((p) => p.trim()).filter(Boolean);
+    if (parts.length > 1) {
+      const hits = parts.map(exact);
+      const found = hits.filter((m): m is Marker => m !== null);
+      if (found.length && found.every((m) => m.id === found[0].id)) {
+        if (found.length >= 2) return { marker: found[0], method: 'exact', similarity: 1 };
+        const part = parts[hits.findIndex(Boolean)];
+        if (!/[a-z]/.test(part) && part.replace(/[^A-Za-z0-9]/g, '').length <= 8) {
+          return { marker: found[0], method: 'fuzzy', similarity: 0.85 };
+        }
+      }
     }
 
     let best: MarkerMatch | null = null;

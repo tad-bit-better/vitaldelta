@@ -1,4 +1,4 @@
-import { detectDrift, effectiveRange, markers, nameKey, percentChange, rangeStatus, sameWord, wordStatus, type Drift, type RangeSource, type RangeStatus, type Sex, type WordStatus } from '@vitaldelta/extraction';
+import { detectDrift, effectiveRange, markers, matchMarker, nameKey, percentChange, rangeStatus, sameWord, wordStatus, type Drift, type RangeSource, type RangeStatus, type Sex, type WordStatus } from '@vitaldelta/extraction';
 import type { Report, Result } from '../storage/types';
 
 export type Point = {
@@ -39,9 +39,22 @@ export type TestSeries = {
 };
 
 const markerUnit = new Map(markers.map((m) => [m.id, m.unit]));
+const markerById = new Map(markers.map((m) => [m.id, m]));
 
-export function seriesKey(r: Pick<Result, 'markerId' | 'name'>): string {
-  return r.markerId ?? `name:${r.name.trim().toLowerCase()}`;
+/**
+ * The marker a saved result belongs to. Results saved as "not in our list" are matched again
+ * with today's matcher, so a name it has since learned ("TSH -Thyroid-Stimulating Hormone")
+ * joins the same history as "TSH". Only on a confident match whose unit is already the
+ * marker's standard unit: nothing is converted or guessed after the user's review.
+ */
+export function resolveMarkerId(r: Pick<Result, 'markerId' | 'name' | 'unit'>): string | null {
+  if (r.markerId) return r.markerId;
+  const match = matchMarker(r.name);
+  return match?.method === 'exact' && r.unit === match.marker.unit ? match.marker.id : null;
+}
+
+export function seriesKey(r: Pick<Result, 'markerId' | 'name' | 'unit'>): string {
+  return resolveMarkerId(r) ?? `name:${r.name.trim().toLowerCase()}`;
 }
 
 const byDate = (a: { date: string }, b: { date: string }) => a.date.localeCompare(b.date);
@@ -61,9 +74,10 @@ export function buildSeries(reports: Report[], results: Result[], sex: Sex | nul
     // Word results ("Non Reactive") have their own series: see buildWordSeries.
     if (!report || r.value === null) continue;
     const value = r.value;
-    const key = seriesKey(r);
-    const range = effectiveRange(r, sex);
-    const group = groups.get(key) ?? { markerId: r.markerId, name: r.name, points: [] };
+    const markerId = resolveMarkerId(r);
+    const key = markerId ?? seriesKey(r);
+    const range = effectiveRange({ ...r, markerId }, sex);
+    const group = groups.get(key) ?? { markerId, name: markerId ? markerById.get(markerId)!.name : r.name, points: [] };
     group.points.push({
       resultId: r.id,
       reportId: r.reportId,

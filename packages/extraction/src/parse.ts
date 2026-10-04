@@ -165,8 +165,13 @@ export function parseRow(row: Row): ParsedRow | null {
   const chosen = candidates.find(({ t }) => t.startsItem) ?? candidates[0];
   if (!chosen) return null;
 
+  // A flag printed in its own column before the value ("TSH | H | 5.2 | µIU/mL") belongs to
+  // the value, not the name.
+  const before = tokens[chosen.i - 1];
+  const preFlag = chosen.i >= 2 && before.startsItem && (before.text === '*' || FLAGS[before.text.toUpperCase()]) ? before : null;
+
   let name = tokens
-    .slice(0, chosen.i)
+    .slice(0, preFlag ? chosen.i - 1 : chosen.i)
     .map((t) => t.text)
     .join(' ')
     .replace(/^\d+[.)]?\s+/, '') // leading serial number
@@ -183,7 +188,7 @@ export function parseRow(row: Row): ParsedRow | null {
   const comparator = comparatorText
     ? (({ '≤': '<=', '≥': '>=' } as Record<string, Comparator>)[comparatorText] ?? (comparatorText as Comparator))
     : null;
-  let flag: ParsedRow['flag'] = suffix && suffix !== '*' ? FLAGS[suffix] : null;
+  let flag: ParsedRow['flag'] = suffix && suffix !== '*' ? FLAGS[suffix] : (preFlag && FLAGS[preFlag.text.toUpperCase()]) || null;
 
   // Everything after the value: pull out the flag and unit, the rest holds the range.
   const rest: string[] = [];

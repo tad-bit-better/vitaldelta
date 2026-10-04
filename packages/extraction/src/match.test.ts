@@ -17,6 +17,17 @@ describe('matchMarker', () => {
     expect(id('Haemoglobin (Hb) (Photometry)')).toBe('718-7');
   });
 
+  it('matches "abbreviation - full name", trusting it when both parts agree', () => {
+    expect(matchMarker('TSH - Thyroid Stimulating Hormone')).toMatchObject({ marker: { id: '3016-3' }, method: 'exact' });
+    expect(matchMarker('TSH -Thyroid-Stimulating Hormone')).toMatchObject({ marker: { id: '3016-3' }, method: 'exact' });
+    expect(matchMarker('TSH- Thyroid Stimulating Hormone')).toMatchObject({ marker: { id: '3016-3' }, method: 'exact' });
+    expect(matchMarker('Non-HDL Cholesterol')?.marker.id).toBe('43396-1');
+    // Only the abbreviation is known: matched, but marked for review.
+    expect(matchMarker('TSH - Ultrasensitive 3rd Generation')).toMatchObject({ marker: { id: '3016-3' }, method: 'fuzzy' });
+    // A general word on one side must never decide it.
+    expect(matchMarker('Bilirubin - Conjugated')?.marker.id).not.toBe('1975-2');
+  });
+
   it('matches small typos in longer names', () => {
     expect(matchMarker('Haemoglobn')).toMatchObject({ method: 'fuzzy', marker: { id: '718-7' } });
     expect(id('Triglycerids')).toBe('2571-8');

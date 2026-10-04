@@ -16,6 +16,18 @@ const result = (reportId: string, overrides: Partial<Result>): Result => ({
 const reports = [report('a', '2024-01-10'), report('b', '2023-06-01'), report('c', '2024-09-15')];
 
 describe('buildSeries', () => {
+  it('groups a result saved under a name the matcher has since learned with the recognised test', () => {
+    const [tsh, ...rest] = buildSeries(reports, [
+      result('b', { markerId: '3016-3', name: 'TSH', value: 2.1, unit: 'µIU/mL', refLow: 0.4, refHigh: 4.2 }),
+      result('c', { markerId: null, name: 'TSH -Thyroid-Stimulating Hormone', value: 2.6, unit: 'µIU/mL', refLow: 0.4, refHigh: 4.2 }),
+      // A different unit is never merged.
+      result('a', { markerId: null, name: 'TSH -Thyroid-Stimulating Hormone', value: 2.6, unit: 'mIU/mL', refLow: 0.4, refHigh: 4.2 }),
+    ]);
+    expect(tsh).toMatchObject({ key: '3016-3', name: 'TSH' });
+    expect(tsh.points.map((p) => p.value)).toEqual([2.1, 2.6]);
+    expect(rest.map((s) => s.key)).toEqual(['name:tsh -thyroid-stimulating hormone']);
+  });
+
   it('uses the guideline range only where the report printed none, and says so', () => {
     const series = buildSeries(reports, [
       result('a', { markerId: '4548-4', name: 'HbA1c', unit: '%', value: 6.1, refLow: null, refHigh: null }),

@@ -15,6 +15,15 @@ function row(...cells: string[]): Row {
 
 const one = (...cells: string[]) => extractResults([row(...cells)])[0];
 
+describe('lab layouts', () => {
+  // Synthetic.
+  it('reads a flag printed in its own column before the value', () => {
+    expect(one('TSH - Thyroid Stimulating Hormone', 'H', '5.2', 'μIU/mL', 'Non-pregnant: 0.4 - 4.2;')).toMatchObject({
+      markerId: '3016-3', value: 5.2, labFlag: 'high', refLow: 0.4, refHigh: 4.2, issues: [],
+    });
+  });
+});
+
 describe('banded ranges', () => {
   // Synthetic. Labs print interpretive bands instead of one range; the first bound is never the range.
   it('uses the normal band, even when it wraps onto the next lines', () => {
