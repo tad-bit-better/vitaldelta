@@ -241,6 +241,13 @@ what happens, why, and what to do.
   two lines ahead when the bands wrap (`readBands` in `parse.ts`). Without such a band the range
   stays empty (so a guideline range can apply). Banded rows are always flagged for review.
   Never take the first bound of banded text: that's the deficient or high band.
+- **Word results** ("Non Reactive", "Negative", "Nil") are read by `extractWordResults`
+  (`words.ts`): a name, then a word from a fixed list in its own column, then optionally the
+  expected word. They aren't matched to the dictionary (grouped by printed name) and are only
+  compared with the expected word on the same report (`wordStatus`). Stored as `value: null`
+  with `textValue`/`expectedText`; anything numeric (charts, series, duplicates) must skip
+  `value === null`, and TypeScript enforces it. To read more words, extend `WORD` in `words.ts`
+  (only words that are never test names).
 - **Debug a real report without exposing it**: `pnpm --filter @vitaldelta/extraction shape 3`
   prints the 3rd fixture's layout with everything but test names, units and report terms masked.
 - **Run `pnpm harness` after any extraction or dictionary change.** It fails if the match

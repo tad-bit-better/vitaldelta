@@ -1,4 +1,4 @@
-import { rangeName, type RangeSource, type RangeStatus } from '@vitaldelta/extraction';
+import { rangeName, type RangeSource, type RangeStatus, type WordStatus } from '@vitaldelta/extraction';
 import { formatNumber, formatPercent } from './format';
 import type { Point } from './series';
 
@@ -10,6 +10,13 @@ export const STATUS: Record<RangeStatus, { icon: string; label: string }> = {
   'near-low': { icon: '◆', label: 'Near lower limit' },
   'in-range': { icon: '●', label: 'In range' },
   'no-range': { icon: '○', label: 'No range' },
+};
+
+/** Word results: compared only with the expected word printed on the report. */
+export const WORD_STATUS: Record<WordStatus, { icon: string; label: string; tone: Tone }> = {
+  'as-expected': { icon: '●', label: 'As expected', tone: 'ok' },
+  differs: { icon: '✕', label: 'Differs from expected', tone: 'out' },
+  'no-expected': { icon: '○', label: 'No expected result', tone: 'none' },
 };
 
 /** CSS tone for a status: outside, near, ok or none. */

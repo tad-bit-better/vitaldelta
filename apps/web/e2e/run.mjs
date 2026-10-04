@@ -39,8 +39,8 @@ const ARJUN = 'Patient Name : Mr. ARJUN MEHTA   Age/Sex : 34 Y / M';
 const PRIYA = 'Patient Name : Mrs. PRIYA NAIR   Age/Sex : 58 Y / F';
 const REPORTS = {
   'r1.pdf': { patient: ARJUN, date: '05/01/2023', rows: [['Haemoglobin', '14.6', 'g/dL', '13.0 - 17.0'], ['Total Cholesterol', '182', 'mg/dL', '< 200'], ['Homocysteine', '12', 'umol/L', '5 - 15']] },
-  'r2.pdf': { patient: ARJUN, date: '12/07/2023', rows: [['Hemoglobin (Hb)', '13.3', 'g/dL', '13.5 - 17.5'], ['Cholesterol, Total', '205', 'mg/dL', '< 200']] },
-  'r3.pdf': { patient: ARJUN, date: '20/03/2024', rows: [['Haemoglobin', '12.4', 'g/dL', '13.0 - 17.0'], ['Total Cholesterol', '247', 'mg/dL', '< 200'], ['TSH', '4.0', 'uIU/mL', '0.4 - 4.2']] },
+  'r2.pdf': { patient: ARJUN, date: '12/07/2023', rows: [['Hemoglobin (Hb)', '13.3', 'g/dL', '13.5 - 17.5'], ['Cholesterol, Total', '205', 'mg/dL', '< 200'], ['Urine Protein', 'Negative', 'Negative']] },
+  'r3.pdf': { patient: ARJUN, date: '20/03/2024', rows: [['Haemoglobin', '12.4', 'g/dL', '13.0 - 17.0'], ['Total Cholesterol', '247', 'mg/dL', '< 200'], ['TSH', '4.0', 'uIU/mL', '0.4 - 4.2'], ['Urine Protein', 'Trace', 'Negative']] },
   'p1.pdf': { patient: PRIYA, date: '02/05/2024', rows: [['Haemoglobin', '11.9', 'g/dL', '12.0 - 15.5'], ['TSH', '5.1', 'uIU/mL', '0.4 - 4.2'], ['HbA1c', '6.1', '%', '']] },
 };
 
@@ -301,6 +301,9 @@ try {
   check(groups[0]?.startsWith('Outside the range'), 'tests needing attention listed first');
   check((await text('.app-highlights'))?.includes('Total cholesterol changed by +20%'), 'since-last-report change shown');
   check((await text('.app-highlights'))?.includes('Falling across your last 3 results'), 'steady trend shown');
+  check((await text('.app-highlights'))?.includes('Urine Protein changed from Negative to Trace'), 'a word result that changed is highlighted');
+  const words = await text('.app-group:has(.app-tests-list) .app-test');
+  check(words?.includes('Urine Protein') && words.includes('Trace') && words.includes('Differs from expected'), 'word results listed under Other results, compared with the expected word');
   check((await layout()) === 'grid', 'tests shown as cards by default');
   await shot('grid');
   await shot('grid-phone', 400);
@@ -340,7 +343,10 @@ try {
   await waitFor(`!!document.querySelector('.summary-table')`, 'summary table');
   await a11y('doctor summary');
   const captions = await evaluate(`[...document.querySelectorAll('.summary-table caption')].map((c) => c.innerText)`);
-  check(captions[0]?.startsWith('Outside or near the range (3)') && captions[1]?.startsWith('Other tests'), 'attention table first, then other tests');
+  check(
+    captions[0]?.startsWith('Outside or near the range (3)') && captions[1]?.startsWith('Results in words (1)') && captions.at(-1)?.startsWith('Other tests'),
+    'attention table first, then results in words, then other tests',
+  );
   const firstTable = await text('.summary-table');
   check(firstTable?.includes('Total cholesterol') && firstTable.includes('+20%') && firstTable.includes('▲ Above range'), 'summary rows show value, change and status label');
   check((await text('.summary-notes'))?.includes('Haemoglobin: falling across the last 3 results'), 'summary lists steady trends');

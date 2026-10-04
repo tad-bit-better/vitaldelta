@@ -4,9 +4,10 @@ import { formatDate } from './format';
 import Highlights from './Highlights';
 import Link from './Link';
 import { navigate, summaryPath } from './router';
-import { buildSeries, sinceLastReport } from './series';
+import { buildSeries, buildWordSeries, sinceLastReport } from './series';
 import { useStorage } from './StorageContext';
 import TestList from './TestList';
+import WordList from './WordList';
 
 /** One patient: what changed, steady trends, tests grouped by status, and their reports. */
 export default function PatientDashboard({ profileId, notice }: { profileId: string; notice: string | null }) {
@@ -28,6 +29,8 @@ export default function PatientDashboard({ profileId, notice }: { profileId: str
 
   const { reports, results } = forProfile(data, profileId);
   const tests = buildSeries(reports, results, profile.sex);
+  const words = buildWordSeries(reports, results);
+  const hasResults = tests.length > 0 || words.length > 0;
   const counts = new Map<string, number>();
   for (const r of results) counts.set(r.reportId, (counts.get(r.reportId) ?? 0) + 1);
   const otherNames = profile.aliases.filter((a) => a.toLowerCase() !== profile.name.toLowerCase());
@@ -61,7 +64,7 @@ export default function PatientDashboard({ profileId, notice }: { profileId: str
         )}
         {renaming === null && (
           <div className="app-row">
-            {tests.length > 0 && (
+            {hasResults && (
               <Link to={summaryPath(profile.id)} className="app-btn app-btn-sm app-btn-primary">
                 Doctor summary
               </Link>
@@ -100,10 +103,11 @@ export default function PatientDashboard({ profileId, notice }: { profileId: str
       {notice && <p className="app-notice" role="status">{notice}</p>}
       {reports.length === 0 && <p className="app-muted">No reports for {profile.name} yet.</p>}
 
-      {tests.length > 0 && (
-        <Highlights profileId={profile.id} summary={sinceLastReport(reports, tests)} tests={tests} />
+      {hasResults && (
+        <Highlights profileId={profile.id} summary={sinceLastReport(reports, tests)} tests={tests} words={words} />
       )}
       {tests.length > 0 && <TestList profileId={profile.id} tests={tests} />}
+      {words.length > 0 && <WordList words={words} />}
 
       {reports.length > 0 && (
         <div className="app-group">

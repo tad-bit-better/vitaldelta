@@ -57,7 +57,7 @@ const RESULT: Record<string, Check> = {
   reportId: str,
   markerId: nullable(str),
   name: str,
-  value: num,
+  value: nullable(num),
   unit: nullable(str),
   comparator: nullable(oneOf('<', '<=', '>', '>=')),
   refLow: nullable(num),
@@ -96,7 +96,11 @@ export function parseBackup(text: string): Backup {
     aliases: Array.isArray(p.aliases) ? p.aliases.filter((a) => typeof a === 'string') : [],
   }));
   const reports = records<Report>(data.reports, REPORT, 'reports');
-  const results = records<Result>(data.results, RESULT, 'results');
+  const results = records<Result>(data.results, RESULT, 'results').map((r) => {
+    const textValue = typeof r.textValue === 'string' ? r.textValue : null;
+    if (r.value === null && textValue === null) throw new BackupError('The backup has a result with neither a value nor a text result.');
+    return { ...r, textValue, expectedText: typeof r.expectedText === 'string' ? r.expectedText : null };
+  });
 
   const profileIds = new Set(profiles.map((p) => p.id));
   const reportIds = new Set(reports.map((r) => r.id));

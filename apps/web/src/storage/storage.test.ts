@@ -18,6 +18,8 @@ const result = (overrides: Partial<NewResult> = {}): NewResult => ({
   confidence: 1,
   userEdited: false,
   original: { valueText: '13.5', unit: 'g/dL', refText: '13.0 - 17.0' },
+  textValue: null,
+  expectedText: null,
   ...overrides,
 });
 const report = (collectedAt: string) => ({ collectedAt, labName: 'Test Lab', sourceFileName: 'synthetic.pdf' });
@@ -52,6 +54,15 @@ describe.each([
     expect(loaded?.report).toEqual(saved);
     expect(loaded?.results).toHaveLength(2);
     expect(loaded?.results.every((r) => r.reportId === saved.id && r.id)).toBe(true);
+  });
+
+  it('stores results printed as words', async () => {
+    storage = create();
+    const me = await person('Arjun Mehta');
+    const saved = await storage.saveReport(me.id, report('2024-03-11'), [
+      result({ markerId: null, name: 'HBsAg', value: null, unit: null, refLow: null, refHigh: null, textValue: 'Non Reactive', expectedText: 'Non Reactive' }),
+    ]);
+    expect((await storage.getReport(saved.id))?.results[0]).toMatchObject({ value: null, textValue: 'Non Reactive', expectedText: 'Non Reactive' });
   });
 
   it('refuses to save a report for a missing profile', async () => {

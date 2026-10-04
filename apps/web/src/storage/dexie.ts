@@ -25,6 +25,8 @@ export function hasPersistentData(): Promise<boolean> {
 
 /** Profiles saved before multi-patient support lack these fields. */
 const normalise = (p: Profile): Profile => ({ ...p, aliases: p.aliases ?? [], sex: p.sex ?? null });
+/** Results saved before word results existed lack these fields. */
+const normaliseResult = (r: Result): Result => ({ ...r, textValue: r.textValue ?? null, expectedText: r.expectedText ?? null });
 
 const byCollectedDesc = (a: Report, b: Report) => b.collectedAt.localeCompare(a.collectedAt) || b.createdAt.localeCompare(a.createdAt);
 
@@ -78,7 +80,7 @@ export function createDexieStorage(): Storage {
     async getReport(id) {
       const report = await db.reports.get(id);
       if (!report) return null;
-      return { report, results: await db.results.where('reportId').equals(id).toArray() };
+      return { report, results: (await db.results.where('reportId').equals(id).toArray()).map(normaliseResult) };
     },
 
     async saveReport(profileId, input: NewReport, newResults: NewResult[]) {
@@ -106,7 +108,7 @@ export function createDexieStorage(): Storage {
             ? await db.results.where('markerId').equals(filter.markerId).toArray()
             : await db.results.toArray();
       if (filter.markerId !== undefined) results = results.filter((r) => r.markerId === filter.markerId);
-      return results;
+      return results.map(normaliseResult);
     },
 
     async importBackup(backup) {

@@ -287,6 +287,8 @@ a.app-btn { display: inline-flex; align-items: center; text-decoration: none; }
 .summary-table th[scope="row"] { text-align: left; font-weight: 600; color: var(--text); white-space: normal; border-bottom-color: var(--line); }
 .summary-table td, .summary-table th { padding: 7px 10px; }
 .summary-num { font-variant-numeric: tabular-nums; }
+/* Guideline ranges ("≥ 60 · KDIGO guideline") wrap rather than widen the table. */
+.summary-table td[data-label="Range"] { white-space: normal; min-width: 6em; }
 .summary-notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
 .summary-notes h2 { margin: 0 0 6px; font-size: 16px; }
 .summary-notes ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; font-size: 14px; }

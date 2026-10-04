@@ -12,7 +12,7 @@ const valid = (): Backup => ({
     {
       id: 'x1', reportId: 'r1', markerId: '718-7', name: 'Haemoglobin', value: 13.5, unit: 'g/dL', comparator: null,
       refLow: 13, refHigh: 17, labFlag: null, confidence: 1, userEdited: false,
-      original: { valueText: '13.5', unit: 'g/dL', refText: '13.0 - 17.0' },
+      original: { valueText: '13.5', unit: 'g/dL', refText: '13.0 - 17.0' }, textValue: null, expectedText: null,
     },
   ],
 });
@@ -27,6 +27,18 @@ describe('parseBackup', () => {
     const b = valid() as unknown as { profiles: Record<string, unknown>[] };
     delete b.profiles[0].aliases;
     expect(parse(b).profiles[0].aliases).toEqual([]);
+  });
+
+  it('reads backups made before word results existed, and word results', () => {
+    const old = valid() as unknown as { results: Record<string, unknown>[] };
+    delete old.results[0].textValue;
+    delete old.results[0].expectedText;
+    expect(parse(old).results[0]).toMatchObject({ value: 13.5, textValue: null, expectedText: null });
+    const words = valid();
+    Object.assign(words.results[0], { value: null, textValue: 'Negative', expectedText: 'Negative' });
+    expect(parse(words).results[0]).toMatchObject({ value: null, textValue: 'Negative' });
+    Object.assign(words.results[0], { textValue: null });
+    expect(() => parse(words)).toThrow('neither a value nor a text result');
   });
 
   it('rejects files that are not backups', () => {

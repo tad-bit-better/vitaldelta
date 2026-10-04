@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { extractResults, groupRows, markers, type TextItem } from '@vitaldelta/extraction';
+import { extractResults, extractWordResults, groupRows, markers, type TextItem } from '@vitaldelta/extraction';
 import { parseBackup } from '../storage/backup';
 import { buildSeries } from '../app/series';
 import { NEXT_SAMPLE_REPORT, sampleBackup } from './sampleData';
@@ -35,7 +35,9 @@ describe('demo data', () => {
     const extracted = extractResults(groupRows(items));
     const known = new Set(markers.map((m) => m.id));
     const recognised = extracted.filter((r) => r.markerId && known.has(r.markerId));
-    expect(recognised).toHaveLength(NEXT_SAMPLE_REPORT.rows.length - 1); // all but Homocysteine
+    // All numeric rows but Homocysteine (kept under its printed name); the last two are word results.
+    expect(recognised).toHaveLength(NEXT_SAMPLE_REPORT.rows.length - 3);
+    expect(extractWordResults(groupRows(items)).map((w) => w.text)).toEqual(['Non Reactive', 'Nil']);
   });
 
   it('builds a PDF whose cross-reference offsets point at its objects', () => {

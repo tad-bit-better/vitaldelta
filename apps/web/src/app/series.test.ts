@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Report, Result } from '../storage/types';
-import { buildSeries, sinceLastReport } from './series';
+import { buildSeries, buildWordSeries, sinceLastReport } from './series';
 
 // Synthetic data only.
 const report = (id: string, collectedAt: string): Report => ({
@@ -9,7 +9,8 @@ const report = (id: string, collectedAt: string): Report => ({
 let n = 0;
 const result = (reportId: string, overrides: Partial<Result>): Result => ({
   id: `r${n++}`, reportId, markerId: '718-7', name: 'Haemoglobin', value: 14, unit: 'g/dL', comparator: null,
-  refLow: 13, refHigh: 17, labFlag: null, confidence: 1, userEdited: false, original: null, ...overrides,
+  refLow: 13, refHigh: 17, labFlag: null, confidence: 1, userEdited: false, original: null, textValue: null, expectedText: null,
+  ...overrides,
 });
 
 const reports = [report('a', '2024-01-10'), report('b', '2023-06-01'), report('c', '2024-09-15')];
@@ -117,5 +118,24 @@ describe('sinceLastReport', () => {
 
   it('only covers tests in the latest report', () => {
     expect(kinds([result('b', { value: 15 }), result('a', { value: 11 })])).toEqual([]);
+  });
+});
+
+describe('buildWordSeries', () => {
+  const word = (reportId: string, name: string, textValue: string, expectedText: string | null) =>
+    result(reportId, { markerId: null, name, value: null, unit: null, refLow: null, refHigh: null, textValue, expectedText });
+
+  it('groups word results by name, compares with the expected word, and notes a change', () => {
+    const [hbsag] = buildWordSeries(reports, [
+      word('b', 'HBsAg', 'Non Reactive', 'Non Reactive'),
+      word('c', 'HBSAG', 'Reactive', 'Non-Reactive'),
+      result('a', { value: 13 }),
+    ]);
+    expect(hbsag.points.map((p) => [p.date, p.status])).toEqual([['2023-06-01', 'as-expected'], ['2024-09-15', 'differs']]);
+    expect(hbsag.changedFrom?.text).toBe('Non Reactive');
+  });
+
+  it('keeps word results out of the numeric series', () => {
+    expect(buildSeries(reports, [word('a', 'HBsAg', 'Negative', 'Negative')])).toEqual([]);
   });
 });

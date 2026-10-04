@@ -2,10 +2,12 @@ import {
   detectPatient,
   detectReportDate,
   extractResults,
+  extractWordResults,
   groupRows,
   type DetectedDate,
   type DetectedPatient,
   type ExtractedResult,
+  type ExtractedWordResult,
 } from '@vitaldelta/extraction';
 import { useState } from 'react';
 import { PdfNoTextError, PdfPasswordError, readPdf } from '../pdf/readPdf';
@@ -13,6 +15,8 @@ import { PdfNoTextError, PdfPasswordError, readPdf } from '../pdf/readPdf';
 export type Extracted = {
   fileName: string;
   results: ExtractedResult[];
+  /** Results printed as words ("Non Reactive"). */
+  words: ExtractedWordResult[];
   detectedDate: DetectedDate | null;
   patient: DetectedPatient;
 };
@@ -43,11 +47,12 @@ export default function Upload({ onExtracted, onCancel, sample }: Props) {
       await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve)));
       const rows = groupRows(items);
       const results = extractResults(rows);
-      if (!results.length) {
+      const words = extractWordResults(rows);
+      if (!results.length && !words.length) {
         setError('We couldn’t find any lab results in this PDF. Is it a lab report?');
         return;
       }
-      onExtracted({ fileName: selected.name, results, detectedDate: detectReportDate(rows), patient: detectPatient(rows) });
+      onExtracted({ fileName: selected.name, results, words, detectedDate: detectReportDate(rows), patient: detectPatient(rows) });
     } catch (err) {
       if (err instanceof PdfPasswordError) {
         setNeedsPassword(true);

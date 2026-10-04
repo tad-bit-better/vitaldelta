@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { formatDate, formatNumber, formatPercent } from './format';
 import Link from './Link';
 import { testPath } from './router';
-import type { SinceLastReport, TestSeries } from './series';
-import { changeHeadline, driftText, STATUS, tone } from './status';
+import type { SinceLastReport, TestSeries, WordSeries } from './series';
+import { changeHeadline, driftText, STATUS, tone, WORD_STATUS } from './status';
 
-type Props = { profileId: string; summary: SinceLastReport | null; tests: TestSeries[] };
+type Props = { profileId: string; summary: SinceLastReport | null; tests: TestSeries[]; words?: WordSeries[] };
 
 /** The two things a skim of the latest report misses: what changed, and slow steady moves. */
 /** Items shown before "Show all" on narrow screens (CSS hides the rest; wide screens show all). */
@@ -20,10 +20,13 @@ function ShowAll({ count, open, onToggle }: { count: number; open: boolean; onTo
   );
 }
 
-export default function Highlights({ profileId, summary, tests }: Props) {
+export default function Highlights({ profileId, summary, tests, words = [] }: Props) {
   const [allChanges, setAllChanges] = useState(false);
   const [allTrends, setAllTrends] = useState(false);
   if (!summary) return null;
+  // Word results that changed in the latest report ("Non Reactive" → "Reactive") come first.
+  const wordChanges = words.filter((w) => w.changedFrom && w.latest.date === summary.latestDate);
+  const changeCount = summary.changes.length + wordChanges.length;
   const drifting = tests.filter((t) => t.drift).sort((a, b) => b.drift!.count - a.drift!.count || a.name.localeCompare(b.name));
 
   return (
@@ -37,11 +40,28 @@ export default function Highlights({ profileId, summary, tests }: Props) {
             <p className="app-muted">
               {formatDate(summary.latestDate)} compared with each test’s previous result.
             </p>
-            {summary.changes.length === 0 ? (
+            {changeCount === 0 ? (
               <p>No status changes and no moves of 10% or more.</p>
             ) : (
               <>
                 <ul className={`app-changes${allChanges ? '' : ' app-changes-collapsed'}`}>
+                  {wordChanges.map((w) => (
+                    <li key={w.key}>
+                      <div className="app-change">
+                        <span className={`app-change-icon app-status-${WORD_STATUS[w.latest.status].tone}`} aria-hidden="true">
+                          {WORD_STATUS[w.latest.status].icon}
+                        </span>
+                        <span>
+                          <strong>
+                            {w.name} changed from {w.changedFrom!.text} to {w.latest.text}
+                          </strong>
+                          <span className="app-muted">
+                            {w.latest.expected ? `Expected ${w.latest.expected} · ` : ''}previous result {formatDate(w.changedFrom!.date)}
+                          </span>
+                        </span>
+                      </div>
+                    </li>
+                  ))}
                   {summary.changes.map(({ series: s, kind }) => (
                     <li key={s.key}>
                       <Link to={testPath(profileId, s.key)} className="app-change">
@@ -60,7 +80,7 @@ export default function Highlights({ profileId, summary, tests }: Props) {
                     </li>
                   ))}
                 </ul>
-                <ShowAll count={summary.changes.length} open={allChanges} onToggle={() => setAllChanges((v) => !v)} />
+                <ShowAll count={changeCount} open={allChanges} onToggle={() => setAllChanges((v) => !v)} />
               </>
             )}
             {summary.newTests.length > 0 && (

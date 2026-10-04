@@ -33,8 +33,12 @@ export type Result = {
   /** LOINC id, or null for a test kept under its printed name. */
   markerId: string | null;
   name: string;
-  /** In the marker's standard unit when recognised. */
-  value: number;
+  /** In the marker's standard unit when recognised. Null for a result printed as a word. */
+  value: number | null;
+  /** A result printed as a word ("Non Reactive", "Negative"); null for numeric results. */
+  textValue: string | null;
+  /** For word results: the expected word printed on the report, if any. */
+  expectedText: string | null;
   unit: string | null;
   comparator: Comparator | null;
   /** Nullable: one-sided ranges like "<200" have only refHigh. */

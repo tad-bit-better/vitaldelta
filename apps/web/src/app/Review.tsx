@@ -6,6 +6,8 @@ import { formatDate } from './format';
 import { findDuplicate, mismatchReasons, suggestProfile } from './patients';
 import { useStorage } from './StorageContext';
 import type { Extracted } from './Upload';
+import WordReview from './WordReview';
+import { fromExtractedWord, wordProblems, wordRowId, wordToNewResult, type WordDraft } from './wordDrafts';
 
 type Status = 'pending' | 'confirmed' | 'rejected';
 
@@ -81,6 +83,8 @@ function toNewResult(d: Draft): NewResult {
     markerId: d.markerId,
     name: d.name.trim(),
     value: Number(d.value),
+    textValue: null,
+    expectedText: null,
     unit: d.unit.trim() || null,
     comparator: d.source?.comparator ?? null,
     refLow: toNumber(d.refLow),
@@ -108,6 +112,9 @@ export default function Review({ extracted, onSaved, onCancel }: Props) {
   const [differentReport, setDifferentReport] = useState(false);
   const [samePerson, setSamePerson] = useState(false);
   const [drafts, setDrafts] = useState<Draft[]>(() => extracted.results.map(fromExtracted));
+  const [words, setWords] = useState<WordDraft[]>(() => extracted.words.map(fromExtractedWord));
+  const updateWord = (key: string, change: Partial<WordDraft>) =>
+    setWords((all) => all.map((w) => (w.key === key ? { ...w, ...change } : w)));
   const [collectedAt, setCollectedAt] = useState(extracted.detectedDate?.date ?? '');
   const [labName, setLabName] = useState('');
   const [saving, setSaving] = useState(false);
@@ -130,8 +137,11 @@ export default function Review({ extracted, onSaved, onCancel }: Props) {
   const others = drafts.filter((d) => !d.flagged);
   const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
   // Progress: kept-and-valid results out of everything not rejected.
-  const ready = confirmed.length - invalid.length;
-  const total = drafts.length - drafts.filter((d) => d.status === 'rejected').length;
+  const keptWords = words.filter((w) => w.status === 'confirmed');
+  const invalidWords = keptWords.filter((w) => wordProblems(w).length);
+  const kept = confirmed.length + keptWords.length;
+  const ready = kept - invalid.length - invalidWords.length;
+  const total = drafts.filter((d) => d.status !== 'rejected').length + keptWords.length;
   const percent = total ? Math.round((ready / total) * 100) : 0;
 
   const chosen = patient?.kind === 'existing' ? data.profiles.find((p) => p.id === patient.id) ?? null : null;
@@ -153,7 +163,8 @@ export default function Review({ extracted, onSaved, onCancel }: Props) {
   if (!collectedAt) blockers.push({ text: 'date missing', target: 'review-date' });
   if (pending.length) blockers.push({ text: `${plural(pending.length, 'result')} to check`, target: rowId(pending[0].key) });
   if (invalid.length) blockers.push({ text: `${plural(invalid.length, 'value')} to fix`, target: rowId(invalid[0].key) });
-  if (!confirmed.length) blockers.push({ text: 'keep at least one result', target: null });
+  if (invalidWords.length) blockers.push({ text: `${plural(invalidWords.length, 'result')} to fix`, target: wordRowId(invalidWords[0].key) });
+  if (!kept) blockers.push({ text: 'keep at least one result', target: null });
 
   const done = blockers.length === 0 && ready === total && total > 0;
 
@@ -199,7 +210,7 @@ export default function Review({ extracted, onSaved, onCancel }: Props) {
       await storage.saveReport(
         profileId,
         { collectedAt, labName: labName.trim() || null, sourceFileName: extracted.fileName },
-        confirmed.map(toNewResult),
+        [...confirmed.map(toNewResult), ...keptWords.map(wordToNewResult)],
       );
       await data.reload();
       onSaved(profileId);
@@ -346,6 +357,8 @@ export default function Review({ extracted, onSaved, onCancel }: Props) {
         </button>
       </div>
 
+      {words.length > 0 && <WordReview words={words} onChange={updateWord} />}
+
       <div className={`app-savebar${done ? ' app-savebar-done' : ''}`}>
         <progress className="app-savebar-progress" value={ready} max={Math.max(total, 1)} aria-labelledby="review-progress-label" />
         <div className="app-savebar-status" aria-live="polite">
@@ -374,7 +387,7 @@ export default function Review({ extracted, onSaved, onCancel }: Props) {
         <div className="app-actions">
           <button type="button" className="app-btn" onClick={onCancel} disabled={saving}>Discard</button>
           <button id="review-save" type="button" className="app-btn app-btn-primary" onClick={save} disabled={saving || blockers.length > 0}>
-            {saving ? 'Saving…' : `Save ${plural(confirmed.length, 'result')}`}
+            {saving ? 'Saving…' : `Save ${plural(kept, 'result')}`}
           </button>
         </div>
       </div>

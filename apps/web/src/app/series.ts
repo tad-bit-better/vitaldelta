@@ -1,4 +1,4 @@
-import { detectDrift, effectiveRange, markers, percentChange, rangeStatus, type Drift, type RangeSource, type RangeStatus, type Sex } from '@vitaldelta/extraction';
+import { detectDrift, effectiveRange, markers, nameKey, percentChange, rangeStatus, sameWord, wordStatus, type Drift, type RangeSource, type RangeStatus, type Sex, type WordStatus } from '@vitaldelta/extraction';
 import type { Report, Result } from '../storage/types';
 
 export type Point = {
@@ -44,7 +44,7 @@ export function seriesKey(r: Pick<Result, 'markerId' | 'name'>): string {
   return r.markerId ?? `name:${r.name.trim().toLowerCase()}`;
 }
 
-const byDate = (a: Point, b: Point) => a.date.localeCompare(b.date);
+const byDate = (a: { date: string }, b: { date: string }) => a.date.localeCompare(b.date);
 
 /**
  * Groups saved results into one series per test across reports. Only results in the
@@ -58,7 +58,9 @@ export function buildSeries(reports: Report[], results: Result[], sex: Sex | nul
 
   for (const r of results) {
     const report = reportById.get(r.reportId);
-    if (!report) continue;
+    // Word results ("Non Reactive") have their own series: see buildWordSeries.
+    if (!report || r.value === null) continue;
+    const value = r.value;
     const key = seriesKey(r);
     const range = effectiveRange(r, sex);
     const group = groups.get(key) ?? { markerId: r.markerId, name: r.name, points: [] };
@@ -67,11 +69,11 @@ export function buildSeries(reports: Report[], results: Result[], sex: Sex | nul
       reportId: r.reportId,
       date: report.collectedAt,
       labName: report.labName,
-      value: r.value,
+      value,
       unit: r.unit,
       comparator: r.comparator,
       ...range,
-      status: rangeStatus({ value: r.value, comparator: r.comparator, ...range }),
+      status: rangeStatus({ value, comparator: r.comparator, ...range }),
     });
     groups.set(key, group);
   }
@@ -157,4 +159,54 @@ export function sinceLastReport(reports: Report[], series: TestSeries[]): SinceL
 
   changes.sort((a, b) => KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind) || a.series.name.localeCompare(b.series.name));
   return { latestDate, previousDate: dates.at(-2) ?? null, changes, newTests };
+}
+
+export type WordPoint = {
+  resultId: string;
+  date: string;
+  labName: string | null;
+  text: string;
+  expected: string | null;
+  status: WordStatus;
+};
+
+/** One test reported as words ("Non Reactive") across reports. */
+export type WordSeries = {
+  /** "word:<normalised printed name>" */
+  key: string;
+  name: string;
+  /** Oldest first. */
+  points: WordPoint[];
+  latest: WordPoint;
+  /** The result before the latest, when it was a different word. */
+  changedFrom: WordPoint | null;
+};
+
+/** Groups word results by printed name (they aren't matched to the dictionary). */
+export function buildWordSeries(reports: Report[], results: Result[]): WordSeries[] {
+  const reportById = new Map(reports.map((r) => [r.id, r]));
+  const groups = new Map<string, { name: string; points: WordPoint[] }>();
+  for (const r of results) {
+    const report = reportById.get(r.reportId);
+    if (!report || r.textValue === null) continue;
+    const key = `word:${nameKey(r.name)}`;
+    const group = groups.get(key) ?? { name: r.name, points: [] };
+    group.points.push({
+      resultId: r.id,
+      date: report.collectedAt,
+      labName: report.labName,
+      text: r.textValue,
+      expected: r.expectedText,
+      status: wordStatus(r.textValue, r.expectedText),
+    });
+    groups.set(key, group);
+  }
+  return [...groups]
+    .map(([key, { name, points }]) => {
+      const sorted = points.sort(byDate);
+      const latest = sorted.at(-1)!;
+      const previous = sorted.at(-2);
+      return { key, name, points: sorted, latest, changedFrom: previous && !sameWord(previous.text, latest.text) ? previous : null };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
 }

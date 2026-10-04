@@ -2,8 +2,8 @@ import { forProfile, useAppData } from './DataContext';
 import { formatDate, formatNumber, formatPercent } from './format';
 import Link from './Link';
 import { patientPath } from './router';
-import { buildSeries, sinceLastReport, type Point, type TestSeries } from './series';
-import { changeHeadline, driftText, groupByStatus, rangeCell, STATUS, tone } from './status';
+import { buildSeries, buildWordSeries, sinceLastReport, type Point, type TestSeries, type WordSeries } from './series';
+import { changeHeadline, driftText, groupByStatus, rangeCell, STATUS, tone, WORD_STATUS } from './status';
 
 /** Full names for the guideline citations in the dictionary. */
 const GUIDELINE_NAMES: Record<string, string> = {
@@ -64,6 +64,57 @@ function SummaryTable({ caption, tests }: { caption: string; tests: TestSeries[]
   );
 }
 
+/** Results printed as words, the ones that differ from the expected word first. */
+function WordTable({ words }: { words: WordSeries[] }) {
+  const order = { differs: 0, 'no-expected': 1, 'as-expected': 2 };
+  const sorted = [...words].sort((a, b) => order[a.latest.status] - order[b.latest.status] || a.name.localeCompare(b.name));
+  return (
+    <div className="app-table-wrap">
+      <table className="app-table summary-table">
+        <caption>Results in words ({words.length})</caption>
+        <thead>
+          <tr>
+            <th scope="col">Test</th>
+            <th scope="col">Result</th>
+            <th scope="col">Expected</th>
+            <th scope="col">Status</th>
+            <th scope="col">Date</th>
+            <th scope="col">Previous</th>
+          </tr>
+        </thead>
+        <tbody>
+          {sorted.map((w) => {
+            const status = WORD_STATUS[w.latest.status];
+            const previous = w.points.at(-2);
+            return (
+              <tr key={w.key}>
+                <th scope="row">{w.name}</th>
+                <td data-label="Result">{w.latest.text}</td>
+                <td data-label="Expected">{w.latest.expected ?? '—'}</td>
+                <td data-label="Status">
+                  <span className={`app-status app-status-${status.tone}`}>
+                    <span aria-hidden="true">{status.icon}</span> {status.label}
+                  </span>
+                </td>
+                <td data-label="Date">{formatDate(w.latest.date)}</td>
+                <td data-label="Previous">
+                  {previous ? (
+                    <>
+                      {previous.text} <span className="app-muted">({formatDate(previous.date)})</span>
+                    </>
+                  ) : (
+                    '—'
+                  )}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 /**
  * One page to take to a doctor's visit: what's outside or near its range, what
  * changed since the last report, slow steady moves, then everything else. Prints (or
@@ -83,10 +134,13 @@ export default function Summary({ profileId }: { profileId: string }) {
 
   const { reports, results } = forProfile(data, profileId);
   const tests = buildSeries(reports, results, profile.sex);
+  const words = buildWordSeries(reports, results);
+  const hasResults = tests.length > 0 || words.length > 0;
   const groups = groupByStatus(tests, (t) => t.latest.status, 'attention-first');
   const attention = groups.filter((g) => g.tone === 'out' || g.tone === 'near').flatMap((g) => g.items);
   const others = groups.filter((g) => g.tone === 'ok' || g.tone === 'none').flatMap((g) => g.items);
   const since = sinceLastReport(reports, tests);
+  const wordChanges = words.filter((w) => w.changedFrom && w.latest.date === since?.latestDate);
   const guidelines = [...new Set(tests.map((t) => t.latest.guidelineSource).filter((g): g is string => g !== null))];
   const drifting = tests.filter((t) => t.drift);
   const dates = reports.map((r) => r.collectedAt).sort();
@@ -98,7 +152,7 @@ export default function Summary({ profileId }: { profileId: string }) {
     <section className="app-card summary">
       <div className="app-row summary-actions">
         <Link to={patientPath(profileId)} className="app-back">← {profile.name}’s tests</Link>
-        <button type="button" className="app-btn app-btn-primary" onClick={() => window.print()} disabled={tests.length === 0}>
+        <button type="button" className="app-btn app-btn-primary" onClick={() => window.print()} disabled={!hasResults}>
           Print or save as PDF
         </button>
       </div>
@@ -121,15 +175,17 @@ export default function Summary({ profileId }: { profileId: string }) {
         </p>
       </header>
 
-      {tests.length === 0 ? (
+      {!hasResults ? (
         <p className="app-muted">Add a report to build a summary.</p>
       ) : (
         <>
           {attention.length > 0 ? (
             <SummaryTable caption={`Outside or near the range (${attention.length})`} tests={attention} />
           ) : (
-            <p>Every latest value is within its range.</p>
+            tests.length > 0 && <p>Every latest value is within its range.</p>
           )}
+
+          {words.length > 0 && <WordTable words={words} />}
 
           {(since?.previousDate || drifting.length > 0) && (
             <div className="summary-notes">
@@ -138,10 +194,16 @@ export default function Summary({ profileId }: { profileId: string }) {
                   <h2>
                     Since the previous report ({formatDate(since.previousDate)} → {formatDate(since.latestDate)})
                   </h2>
-                  {since.changes.length === 0 ? (
+                  {since.changes.length === 0 && wordChanges.length === 0 ? (
                     <p className="app-muted">No status changes and no moves of 10% or more.</p>
                   ) : (
                     <ul>
+                      {wordChanges.map((w) => (
+                        <li key={w.key}>
+                          {w.name} changed from {w.changedFrom!.text} to {w.latest.text}
+                          {w.latest.expected ? ` (expected ${w.latest.expected})` : ''}
+                        </li>
+                      ))}
                       {since.changes.map(({ series: s, kind }) => (
                         <li key={s.key}>
                           {changeHeadline(s.name, kind, s.latest.status, s.change!.percent, s.latest.rangeSource)}:{' '}

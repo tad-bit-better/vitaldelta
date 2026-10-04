@@ -9,7 +9,8 @@ import type { Profile, Report, Result } from '../storage/types';
 export const SAMPLE_LAB = 'Sample Diagnostics (demo)';
 
 type Row = [markerId: string, values: (number | null)[], refLow: number | null, refHigh: number | null];
-type Person = { id: string; name: string; printedName: string; sex: Profile['sex']; dates: string[]; rows: Row[] };
+type WordRow = [name: string, results: (string | null)[], expected: string];
+type Person = { id: string; name: string; printedName: string; sex: Profile['sex']; dates: string[]; rows: Row[]; words?: WordRow[] };
 
 const PEOPLE: Person[] = [
   {
@@ -33,6 +34,11 @@ const PEOPLE: Person[] = [
       ['62238-1', [null, 95, 90, 92], null, null], // eGFR: guideline applies
       ['1742-6', [22, 28, 24, 31], 7, 35], // ALT
     ],
+    // Results printed as words.
+    words: [
+      ['HBsAg (Hepatitis B Surface Antigen)', [null, 'Non Reactive', null, 'Non Reactive'], 'Non Reactive'],
+      ['Urine Glucose', ['Nil', null, 'Nil', 'Nil'], 'Nil'],
+    ],
   },
   {
     id: 'sample-vikram',
@@ -51,6 +57,7 @@ const PEOPLE: Person[] = [
       ['2160-0', [1.1, 1.05], 0.7, 1.3],
       ['62238-1', [78, 81], null, null],
     ],
+    words: [['Urine Protein', ['Negative', 'Trace'], 'Negative']], // changed, now differs from expected
   },
 ];
 
@@ -93,6 +100,8 @@ export function sampleBackup(): Backup {
           markerId,
           name,
           value,
+          textValue: null,
+          expectedText: null,
           unit,
           comparator: null,
           refLow: low,
@@ -106,6 +115,27 @@ export function sampleBackup(): Backup {
       for (const [markerId, values, low, high] of person.rows) {
         const marker = markerById.get(markerId)!;
         add(markerId, marker.name, marker.unit, values[i], low, high);
+      }
+      for (const [name, texts, expected] of person.words ?? []) {
+        const text = texts[i];
+        if (!text) continue;
+        results.push({
+          id: `${reportId}-${name}`,
+          reportId,
+          markerId: null,
+          name,
+          value: null,
+          textValue: text,
+          expectedText: expected,
+          unit: null,
+          comparator: null,
+          refLow: null,
+          refHigh: null,
+          labFlag: null,
+          confidence: 1,
+          userEdited: false,
+          original: { valueText: text, unit: null, refText: expected },
+        });
       }
       if (person.id === 'sample-asha') {
         add(null, HOMOCYSTEINE.name, HOMOCYSTEINE.unit, HOMOCYSTEINE.values[i], HOMOCYSTEINE.refLow, HOMOCYSTEINE.refHigh);
@@ -134,5 +164,7 @@ export const NEXT_SAMPLE_REPORT = {
     ['Creatinine', '0.86', 'mg/dL', '0.6 - 1.1'],
     ['SGPT (ALT)', '27', 'U/L', '7 - 35'],
     ['Homocysteine', '12.8', 'umol/L', '5 - 15'],
+    ['HBsAg (Hepatitis B Surface Antigen)', 'Non Reactive', 'Non Reactive'],
+    ['Urine Glucose', 'Nil', 'Nil'],
   ],
 };

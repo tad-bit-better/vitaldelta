@@ -18,7 +18,7 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { basename, dirname, join, resolve } from 'node:path';
 import { getDocument, PasswordException } from 'pdfjs-dist/legacy/build/pdf.mjs';
-import { extractResults, fromPdfJsItem, groupRows, REVIEW_THRESHOLD, type ExtractedResult, type TextItem } from '../src/index';
+import { extractResults, extractWordResults, fromPdfJsItem, groupRows, REVIEW_THRESHOLD, type ExtractedResult, type TextItem } from '../src/index';
 import { fileLabel } from './privacy';
 
 const args = process.argv.slice(2);
@@ -62,6 +62,8 @@ type FileStats = {
   recognised: number;
   unrecognised: number;
   needsReview: number;
+  /** Results printed as words ("Non Reactive"); not part of the match rate. */
+  words?: number;
   expected?: number;
   correct?: number;
 };
@@ -108,7 +110,9 @@ async function main() {
         s.error = 'no text (scanned?)';
         continue;
       }
-      const results = extractResults(groupRows(items));
+      const rows = groupRows(items);
+      const results = extractResults(rows);
+      s.words = extractWordResults(rows).length;
       s.results = results.length;
       s.recognised = results.filter((r) => r.markerId).length;
       s.unrecognised = s.results - s.recognised;
@@ -133,6 +137,7 @@ async function main() {
       unrecognised: s.error ? '' : s.unrecognised,
       'needs review': s.error ? '' : s.needsReview,
       'match rate': s.error ? '' : pct(s.recognised, s.results),
+      'in words': s.error ? '' : s.words,
       accuracy: s.expected ? `${s.correct}/${s.expected}` : '',
     })),
   );
