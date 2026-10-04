@@ -1,5 +1,5 @@
 import { matchMarker as defaultMatcher, type MarkerMatch } from './match';
-import { parseRow, type Comparator } from './parse';
+import { parseRow, readBands, type Comparator } from './parse';
 import type { Row } from './types';
 import { canonicalUnit, convert } from './units';
 
@@ -12,6 +12,7 @@ export type Issue =
   | 'implausible' // value is outside what's physically possible: likely a misread
   | 'missing-range' // no reference range printed
   | 'odd-range' // reference range doesn't make sense (low ≥ high)
+  | 'banded-range' // range printed as bands (deficient / sufficient / ...): the normal band was used, or none found
   | 'duplicate' // same marker appears more than once with different values
   | 'bound-only'; // value is a bound like "<40" with no range: often guidance text, not a result
 
@@ -44,6 +45,8 @@ const PENALTY: Partial<Record<Issue, number>> = {
   'unknown-unit': 0.3,
   'missing-range': 0.05,
   'odd-range': 0.1,
+  // Always reviewed: the band chosen (or not found) is a judgement the user should see.
+  'banded-range': 0.25,
   duplicate: 0.2,
   'bound-only': 0.3,
 };
@@ -60,9 +63,24 @@ type Matcher = (name: string) => MarkerMatch | null;
 export function extractResults(rows: Row[], matchMarker: Matcher = defaultMatcher): ExtractedResult[] {
   const results: ExtractedResult[] = [];
 
-  for (const row of rows) {
+  for (const [index, row] of rows.entries()) {
     const parsed = parseRow(row);
     if (!parsed) continue;
+
+    // Banded ranges often wrap: the normal band can be on the next line or two (lines that
+    // aren't results themselves). Look there when this line didn't have it.
+    if (parsed.banded && parsed.refLow === null && parsed.refHigh === null) {
+      let text = parsed.refText ?? '';
+      for (const next of rows.slice(index + 1, index + 3)) {
+        if (next.page !== row.page || parseRow(next)) break;
+        text += ` ${next.text}`;
+        const normal = readBands(text)?.normal;
+        if (normal) {
+          Object.assign(parsed, { refLow: normal.refLow, refHigh: normal.refHigh, refText: normal.text });
+          break;
+        }
+      }
+    }
 
     const issues: Issue[] = [];
     const unit = parsed.unit ? canonicalUnit(parsed.unit) : null;
@@ -92,7 +110,7 @@ export function extractResults(rows: Row[], matchMarker: Matcher = defaultMatche
         refLow: parsed.refLow,
         refHigh: parsed.refHigh,
         confidence: UNRECOGNISED_CONFIDENCE,
-        issues: ['unrecognised'],
+        issues: parsed.banded ? ['unrecognised', 'banded-range'] : ['unrecognised'],
       });
       continue;
     }
@@ -119,7 +137,8 @@ export function extractResults(rows: Row[], matchMarker: Matcher = defaultMatche
       refHigh = to(refHigh);
     }
 
-    if (!parsed.refText) issues.push(parsed.comparator ? 'bound-only' : 'missing-range');
+    if (parsed.banded) issues.push('banded-range');
+    else if (!parsed.refText) issues.push(parsed.comparator ? 'bound-only' : 'missing-range');
     else if (refLow !== null && refHigh !== null && refLow >= refHigh) issues.push('odd-range');
 
     for (const issue of issues) confidence -= PENALTY[issue] ?? 0;

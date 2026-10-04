@@ -230,6 +230,11 @@ what happens, why, and what to do.
 
 ## Extraction
 
+- **Ranges printed as bands** ("Deficiency <20 · Insufficiency 20-30 · Sufficiency 30-100") use
+  the band labelled normal/sufficient/desirable/optimal/non-diabetic/adequate, looking up to
+  two lines ahead when the bands wrap (`readBands` in `parse.ts`). Without such a band the range
+  stays empty (so a guideline range can apply). Banded rows are always flagged for review.
+  Never take the first bound of banded text: that's the deficient or high band.
 - **Run `pnpm harness` after any extraction or dictionary change.** It fails if the match
   rate or accuracy drops below the saved baseline (`fixtures/.harness-baseline.json`).
   After an intended improvement, run `pnpm harness --update`.

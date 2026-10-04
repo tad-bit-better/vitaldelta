@@ -15,6 +15,39 @@ function row(...cells: string[]): Row {
 
 const one = (...cells: string[]) => extractResults([row(...cells)])[0];
 
+describe('banded ranges', () => {
+  // Synthetic. Labs print interpretive bands instead of one range; the first bound is never the range.
+  it('uses the normal band, even when it wraps onto the next lines', () => {
+    const first = row('Vitamin D, 25 Hydroxy', '23.4', 'ng/mL', 'Deficiency:<20 ~Insufficiency :20-', 'CLIA');
+    const second = { ...row('30~Sufficiency :30 - 100~Toxicity', 'CLIA'), y: 117 };
+    const third = { ...row(': >100'), y: 129 };
+    const [vitD] = extractResults([first, second, third]);
+    expect(vitD).toMatchObject({ markerId: '1989-3', value: 23.4, refLow: 30, refHigh: 100, issues: ['banded-range'] });
+    expect(vitD.confidence).toBeLessThan(REVIEW_THRESHOLD);
+  });
+
+  it('reads common band wordings on one line', () => {
+    expect(one('Total Cholesterol', '182', 'mg/dL', 'Desirable: <200 Borderline High: 200-239 High: >=240')).toMatchObject({
+      refLow: null, refHigh: 200, issues: ['banded-range'],
+    });
+    expect(one('HbA1c', '5.9', '%', 'Non-diabetic: <5.7 Pre-diabetic: 5.7-6.4 Diabetic: >=6.5')).toMatchObject({
+      refLow: null, refHigh: 5.7, issues: ['banded-range'],
+    });
+  });
+
+  it('leaves the range empty when no band means normal (risk categories)', () => {
+    expect(one('hs-CRP', '2.1', 'mg/L', 'Low risk: <1.0 Average risk: 1.0-3.0 High risk: >3.0')).toMatchObject({
+      refLow: null, refHigh: null, issues: ['banded-range'],
+    });
+  });
+
+  it('does not treat ordinary ranges or method names as bands', () => {
+    expect(one('Haemoglobin', '13.5', 'g/dL', '13.0 - 17.0', 'High Performance Liquid Chromatography')).toMatchObject({
+      refLow: 13, refHigh: 17, issues: [],
+    });
+  });
+});
+
 describe('extractResults', () => {
   it('gives a clean, recognised row full confidence', () => {
     expect(one('Haemoglobin', '13.5', 'g/dL', '13.0 - 17.0')).toMatchObject({
@@ -122,3 +155,4 @@ describe('extractResults', () => {
     expect(conflicting.every((r) => r.issues.includes('duplicate'))).toBe(true);
   });
 });
+

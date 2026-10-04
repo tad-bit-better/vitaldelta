@@ -16,6 +16,11 @@ export type ParsedRow = {
   refHigh: number | null;
   /** The reference range as printed. */
   refText: string | null;
+  /**
+   * The range was printed as labelled bands ("Deficiency <20 / Sufficiency 30-100 / ..."). The
+   * range is the normal band when one was found on this row, otherwise empty.
+   */
+  banded: boolean;
   /** High/low flag printed by the lab, if any. */
   flag: 'high' | 'low' | null;
   /** The whole row text, for review screens and debugging. */
@@ -100,6 +105,44 @@ function findRange(text: string, re: RegExp): RegExpMatchArray | null {
   return null;
 }
 
+// Labels of interpretive bands. Each band is a label then its bound: "Desirable: <200",
+// "Insufficiency :20-30", "Non-diabetic <5.7".
+const BAND_LABEL = String.raw`(?:non[-\s]?diabet\w*|pre[-\s]?diabet\w*|diabet\w*|deficien\w*|insufficien\w*|sufficien\w*|toxic\w*|desirable|undesirable|borderline(?:\s+high|\s+low)?|near\s+optimal|above\s+optimal|optimal|normal|abnormal|very\s+high|high|very\s+low|low|elevated|adequate|inadequate|average|moderate|severe|mild|risk)`;
+const BAND_RE = new RegExp(String.raw`\b(${BAND_LABEL})(?:\s*risk)?\s*(?:[:=]|(?=\s*(?:<=|>=|[<>≤≥]|\d|up\s*to|less|more|above|below)))`, 'gi');
+// The band that means "within range".
+const NORMAL_BAND = /^(?:sufficien|desirable|optimal|normal|non[-\s]?diabet|adequate)/i;
+
+export type Bands = { normal: { label: string; refLow: number | null; refHigh: number | null; text: string } | null };
+
+/** First bound in some text: "30 - 100", "<200", "> 40". */
+function firstRange(text: string): { refLow: number | null; refHigh: number | null; text: string } | null {
+  for (const { re, kind } of RANGE_PATTERNS) {
+    const m = findRange(text, re);
+    if (!m) continue;
+    if (kind === 'between') return { refLow: parseNumber(m[1]), refHigh: parseNumber(m[2]), text: m[0].trim() };
+    if (kind === 'upper') return { refLow: null, refHigh: parseNumber(m[1]), text: m[0].trim() };
+    return { refLow: parseNumber(m[1]), refHigh: null, text: m[0].trim() };
+  }
+  return null;
+}
+
+/**
+ * Reads a range printed as labelled bands. Returns null when the text isn't banded (fewer
+ * than two band labels); otherwise the normal band's range, if there is one in the text.
+ */
+export function readBands(text: string): Bands | null {
+  const labels = [...normalise(text).matchAll(BAND_RE)];
+  if (labels.length < 2) return null;
+  const clean = normalise(text);
+  for (const [i, m] of labels.entries()) {
+    if (!NORMAL_BAND.test(m[1])) continue;
+    const bandText = clean.slice(m.index! + m[0].length, labels[i + 1]?.index ?? clean.length);
+    const range = firstRange(bandText);
+    if (range) return { normal: { label: m[1], ...range, text: `${m[1]} ${range.text}` } };
+  }
+  return { normal: null };
+}
+
 function isUnit(token: string): boolean {
   if (VALUE_RE.test(token)) return false;
   return SLASH_UNIT_RE.test(token) || PERCENT_UNIT_RE.test(token) || STANDALONE_UNITS.has(token.toLowerCase());
@@ -160,6 +203,23 @@ export function parseRow(row: Row): ParsedRow | null {
   let refLow: number | null = null;
   let refHigh: number | null = null;
   let refText: string | null = null;
+  // Banded ranges: the first bound is usually the "deficient" or "high" band, never the range.
+  const bands = readBands(restText);
+  if (bands) {
+    return {
+      name,
+      value,
+      valueText: chosen.t.text.replace(/(H|L|\*|↑|↓)$/, ''),
+      comparator,
+      unit,
+      refLow: bands.normal?.refLow ?? null,
+      refHigh: bands.normal?.refHigh ?? null,
+      refText: bands.normal?.text ?? restText,
+      banded: true,
+      flag,
+      text: row.text,
+    };
+  }
   for (const { re, kind } of RANGE_PATTERNS) {
     const m = findRange(restText, re);
     if (!m) continue;
@@ -184,6 +244,7 @@ export function parseRow(row: Row): ParsedRow | null {
     refLow,
     refHigh,
     refText,
+    banded: false,
     flag,
     text: row.text,
   };

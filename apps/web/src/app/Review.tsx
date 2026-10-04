@@ -33,6 +33,8 @@ const ISSUE_TEXT: Record<Issue, string> = {
   implausible: 'This value looks impossible for this test. It was probably misread.',
   'missing-range': 'No reference range was found.',
   'odd-range': 'The reference range looks wrong.',
+  'banded-range':
+    'The report gives the range as categories (like deficient / sufficient / toxic). The normal category was used as the range where one was found. Check it against the PDF.',
   duplicate: 'This test appears more than once with different values.',
   'bound-only': 'The value is a limit (like “<60”) with no range. It may be a note rather than a result.',
 };
