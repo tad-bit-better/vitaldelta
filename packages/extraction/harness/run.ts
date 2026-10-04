@@ -6,6 +6,8 @@
  *   pnpm harness                 compare with the saved baseline, fail on regression
  *   pnpm harness --update        save the current numbers as the new baseline
  *   pnpm harness --verbose       also list unrecognised test names per file
+ *   pnpm harness --names         show file names (by default files are #1, #2… with a
+ *                                fingerprint: file names often contain the patient's name)
  *
  * Optional, all inside fixtures/ (gitignored):
  *   passwords.json               { "report.pdf": "password" }
@@ -17,6 +19,7 @@ import { createRequire } from 'node:module';
 import { basename, dirname, join, resolve } from 'node:path';
 import { getDocument, PasswordException } from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { extractResults, fromPdfJsItem, groupRows, REVIEW_THRESHOLD, type ExtractedResult, type TextItem } from '../src/index';
+import { fileLabel } from './privacy';
 
 const args = process.argv.slice(2);
 const flags = new Set(args.filter((a) => a.startsWith('--')));
@@ -95,8 +98,9 @@ async function main() {
   }
 
   const stats: FileStats[] = [];
-  for (const file of files) {
-    const s: FileStats = { file, results: 0, recognised: 0, unrecognised: 0, needsReview: 0 };
+  for (const [index, file] of files.entries()) {
+    const label = fileLabel(index, new Uint8Array(readFileSync(join(fixturesDir, file))), file, flags.has('--names'));
+    const s: FileStats = { file: label, results: 0, recognised: 0, unrecognised: 0, needsReview: 0 };
     stats.push(s);
     try {
       const items = await readPdf(join(fixturesDir, file), passwords[file]);
@@ -113,7 +117,7 @@ async function main() {
       if (existsSync(expectedPath)) Object.assign(s, accuracy(results, expectedPath));
       if (flags.has('--verbose') && s.unrecognised) {
         const names = results.filter((r) => !r.markerId).map((r) => r.printedName);
-        console.log(`  ${file} unrecognised: ${names.join(' | ')}`);
+        console.log(`  ${label} unrecognised: ${names.join(' | ')}`);
       }
     } catch (err) {
       s.error = err instanceof PasswordException ? 'password needed (add to passwords.json)' : String(err);

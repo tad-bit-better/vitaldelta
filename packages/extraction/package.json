@@ -9,7 +9,8 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.harness.json",
-    "harness": "tsx harness/run.ts"
+    "harness": "tsx harness/run.ts",
+    "shape": "tsx harness/shape.ts"
   },
   "devDependencies": {
     "@types/node": "^24.19.1",

@@ -7,6 +7,12 @@ what happens, why, and what to do.
 
 - **Don't share `fixtures/` with AI tools or anyone else.** They're real health records.
   The folder is gitignored; `pnpm harness` output (counts and test names only) is safe to share.
+  It numbers files (`#1 f2d22733`) instead of printing their names, because file names often
+  contain the patient's name; `--names` shows them, for your own terminal only.
+- **The shape tool masks everything except a fixed vocabulary** (`harness/privacy.ts`: test
+  names from the dictionary, units, common report terms). Never add words that describe the
+  patient (sex, titles, places) to that list; `privacy.test.ts` checks names, addresses and
+  IDs stay hidden. Pass a fixture number, not a path (`shape 3`): pnpm echoes the command.
   The same goes for `fixtures/passwords.json` and `*.expected.json`.
 
 ## PDF reading
@@ -235,6 +241,8 @@ what happens, why, and what to do.
   two lines ahead when the bands wrap (`readBands` in `parse.ts`). Without such a band the range
   stays empty (so a guideline range can apply). Banded rows are always flagged for review.
   Never take the first bound of banded text: that's the deficient or high band.
+- **Debug a real report without exposing it**: `pnpm --filter @vitaldelta/extraction shape 3`
+  prints the 3rd fixture's layout with everything but test names, units and report terms masked.
 - **Run `pnpm harness` after any extraction or dictionary change.** It fails if the match
   rate or accuracy drops below the saved baseline (`fixtures/.harness-baseline.json`).
   After an intended improvement, run `pnpm harness --update`.
