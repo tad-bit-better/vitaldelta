@@ -99,7 +99,12 @@ export function parseBackup(text: string): Backup {
   const results = records<Result>(data.results, RESULT, 'results').map((r) => {
     const textValue = typeof r.textValue === 'string' ? r.textValue : null;
     if (r.value === null && textValue === null) throw new BackupError('The backup has a result with neither a value nor a text result.');
-    return { ...r, textValue, expectedText: typeof r.expectedText === 'string' ? r.expectedText : null };
+    return {
+      ...r,
+      textValue,
+      expectedText: typeof r.expectedText === 'string' ? r.expectedText : null,
+      method: typeof r.method === 'string' ? r.method : null,
+    };
   });
 
   const profileIds = new Set(profiles.map((p) => p.id));

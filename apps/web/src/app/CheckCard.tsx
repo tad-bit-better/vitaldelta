@@ -60,6 +60,7 @@ export default function CheckCard({ draft: d, pages, selected, onSelect, onUpdat
         </h3>
         {issue && <span className="rv-chip">{ISSUE_CHIP[issue]}</span>}
       </div>
+      {d.source?.method && <p className="rv-method-line">Method: {d.source.method}</p>}
       <SourceSnippet pages={pages} box={d.source?.box} onShowPage={onShowPage} />
 
       {nameQuestion && suggested && suggestion ? (

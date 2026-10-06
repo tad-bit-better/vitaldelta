@@ -297,6 +297,14 @@ what happens, why, and what to do.
 - **Saved "not in our list" results are matched again when shown** (`resolveMarkerId` in
   `series.ts`), so a name the matcher learns later joins the test's history. Only exact matches whose
   unit is already the marker's standard unit; stored data is never rewritten.
+- **Assay methods are split off test names** (`methods.ts`): "HbA1c (HPLC)", "Glucose -
+  Hexokinase", "Creatinine, Jaffe", a method column before the value or after the range, and a
+  "Method: …" line under the test. Text counts as a method only if every word is a method word
+  and one is a specific method name; generic words ("rapid", "modified") never count alone, and
+  "direct"/"indirect" only in "direct ISE", so "Bilirubin (Direct)" stays direct bilirubin.
+  Words that are also test names (microscopy, electrophoresis, esterase, peroxidase) are left out.
+  The method is stored on the result; names saved before this still have it, so `testName()`
+  in `series.ts` strips it when grouping.
 - **"Is this the same test as …?" (`suggestMarker`) is only a question.** It suggests a marker
   when every word of the unrecognised name appears in that marker's name or a synonym, the unit
   converts, and it's the closest fit (fewest extra words; a tie suggests nothing). Accepting it

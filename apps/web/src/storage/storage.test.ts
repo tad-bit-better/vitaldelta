@@ -20,6 +20,7 @@ const result = (overrides: Partial<NewResult> = {}): NewResult => ({
   original: { valueText: '13.5', unit: 'g/dL', refText: '13.0 - 17.0' },
   textValue: null,
   expectedText: null,
+  method: null,
   ...overrides,
 });
 const report = (collectedAt: string) => ({ collectedAt, labName: 'Test Lab', sourceFileName: 'synthetic.pdf' });

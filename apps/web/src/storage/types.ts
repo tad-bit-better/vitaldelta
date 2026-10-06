@@ -39,6 +39,8 @@ export type Result = {
   textValue: string | null;
   /** For word results: the expected word printed on the report, if any. */
   expectedText: string | null;
+  /** Assay method printed with the test ("HPLC"), if any. Different methods often have different ranges. */
+  method: string | null;
   unit: string | null;
   comparator: Comparator | null;
   /** Nullable: one-sided ranges like "<200" have only refHigh. */

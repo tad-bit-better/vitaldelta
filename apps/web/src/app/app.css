@@ -533,6 +533,8 @@ a.app-pill:hover { color: var(--text); }
 .rv-row-action { width: 52px; text-align: right !important; }
 .rv-tag { margin-left: 8px; padding: 1px 8px; font-size: 11px; font-weight: 500; color: var(--text-3); border: 1px solid var(--line-strong); border-radius: 999px; text-decoration: none; }
 .rv-word-status { margin-left: 10px; }
+.rv-method { display: block; font-size: 12px; font-weight: 400; color: var(--text-3); }
+.rv-check .rv-method-line { margin-top: -6px; font-size: 13px; color: var(--text-3); }
 .rv-edit-row > td { padding: 14px 16px; background: var(--card-alt); border-bottom: 1px solid var(--line); }
 .rv-edit-row > td > * + * { margin-top: 12px; }
 

@@ -22,6 +22,28 @@ describe('lab layouts', () => {
       markerId: '3016-3', value: 5.2, labFlag: 'high', refLow: 0.4, refHigh: 4.2, issues: [],
     });
   });
+
+  // Synthetic. Methods printed with the name, in their own column, or on the line below.
+  it('splits the method off the test name and keeps it', () => {
+    expect(one('HbA1c', 'HPLC', '5.8', '%', '4.0 - 5.6')).toMatchObject({ markerId: '4548-4', printedName: 'HbA1c', method: 'HPLC', refLow: 4, refHigh: 5.6, issues: [] });
+    expect(one('Glucose Fasting - Hexokinase', '96', 'mg/dL', '70 - 100')).toMatchObject({ markerId: '1558-6', method: 'Hexokinase', issues: [] });
+    expect(one('Serum Creatinine, Jaffe', '0.9', 'mg/dL', '0.6 - 1.2')).toMatchObject({ markerId: '2160-0', method: 'Jaffe' });
+    expect(one('Bilirubin (Direct)', '0.2', 'mg/dL', '0 - 0.3')).toMatchObject({ markerId: '1968-7', method: null });
+  });
+
+  it('reads a method column after the range without spoiling the range', () => {
+    expect(one('SGPT (ALT)', '36', 'U/L', '13 - 40', 'IFCC without P5P')).toMatchObject({ markerId: '1742-6', refLow: 13, refHigh: 40, method: 'IFCC without P5P', issues: [] });
+  });
+
+  it('reads a method printed on the line under the test', () => {
+    const below = { ...row('Method : Photometry'), y: 118 };
+    const [hb] = extractResults([row('Haemoglobin', '13.2', 'g/dL', '13 - 17'), below]);
+    expect(hb).toMatchObject({ markerId: '718-7', method: 'Photometry' });
+  });
+
+  it('groups an unknown test by its name without the method', () => {
+    expect(one('Homocysteine (CLIA)', '12.8', 'µmol/L', '5 - 15')).toMatchObject({ markerId: null, name: 'Homocysteine', method: 'CLIA' });
+  });
 });
 
 describe('banded ranges', () => {

@@ -10,7 +10,7 @@ const report = (id: string, collectedAt: string): Report => ({
 let n = 0;
 const result = (reportId: string, overrides: Partial<Result>): Result => ({
   id: `r${n++}`, reportId, markerId: '718-7', name: 'Haemoglobin', value: 14, unit: 'g/dL', comparator: null,
-  refLow: 13, refHigh: 17, labFlag: null, confidence: 1, userEdited: false, original: null, textValue: null, expectedText: null,
+  refLow: 13, refHigh: 17, labFlag: null, confidence: 1, userEdited: false, original: null, textValue: null, expectedText: null, method: null,
   ...overrides,
 });
 

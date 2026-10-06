@@ -9,7 +9,7 @@ const report = (id: string, collectedAt: string): Report => ({
 let n = 0;
 const result = (reportId: string, overrides: Partial<Result>): Result => ({
   id: `r${n++}`, reportId, markerId: '718-7', name: 'Haemoglobin', value: 14, unit: 'g/dL', comparator: null,
-  refLow: 13, refHigh: 17, labFlag: null, confidence: 1, userEdited: false, original: null, textValue: null, expectedText: null,
+  refLow: 13, refHigh: 17, labFlag: null, confidence: 1, userEdited: false, original: null, textValue: null, expectedText: null, method: null,
   ...overrides,
 });
 
@@ -26,6 +26,19 @@ describe('buildSeries', () => {
     expect(tsh).toMatchObject({ key: '3016-3', name: 'TSH' });
     expect(tsh.points.map((p) => p.value)).toEqual([2.1, 2.6]);
     expect(rest.map((s) => s.key)).toEqual(['name:tsh -thyroid-stimulating hormone']);
+  });
+
+  it('groups a name saved with its method (before methods were split off) with the same test', () => {
+    const [hba1c, homocysteine] = buildSeries(reports, [
+      result('b', { markerId: null, name: 'Homocysteine (CLIA)', value: 11, unit: 'µmol/L', refLow: 5, refHigh: 15 }),
+      result('c', { markerId: null, name: 'Homocysteine', value: 12, unit: 'µmol/L', refLow: 5, refHigh: 15, method: 'CLIA' }),
+      result('a', { markerId: null, name: 'HbA1c HPLC', value: 5.8, unit: '%', refLow: 4, refHigh: 5.6 }),
+    ]);
+    expect(homocysteine).toMatchObject({ key: 'name:homocysteine', name: 'Homocysteine' });
+    expect(homocysteine.points.map((p) => p.method)).toEqual(['CLIA', 'CLIA']);
+    // And a recognised test with its method glued on is recognised now.
+    expect(hba1c).toMatchObject({ key: '4548-4', name: 'HbA1c' });
+    expect(hba1c.latest.method).toBe('HPLC');
   });
 
   it('uses the guideline range only where the report printed none, and says so', () => {

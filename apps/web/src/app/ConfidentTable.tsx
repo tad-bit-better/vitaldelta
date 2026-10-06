@@ -69,6 +69,7 @@ export default function ConfidentTable({ drafts, selectedKey, onSelect, onUpdate
                 <th scope="row">
                   {d.name}
                   {d.edited && !rejected && <span className="rv-tag">edited</span>}
+                  {d.source?.method && <span className="rv-method">{d.source.method}</span>}
                 </th>
                 <td className="app-mono">
                   <strong>{d.value}</strong> <span className="rv-unit">{d.unit}</span>

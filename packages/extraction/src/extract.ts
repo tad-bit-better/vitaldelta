@@ -1,4 +1,5 @@
 import { matchMarker as defaultMatcher, type MarkerMatch } from './match';
+import { isMethod } from './methods';
 import { parseRow, readBands, type Comparator } from './parse';
 import { rowBox, type Box, type Row } from './types';
 import { canonicalUnit, convert } from './units';
@@ -38,7 +39,20 @@ export type ExtractedResult = {
   page: number;
   /** The row it was read from, to show it on the page. */
   box: Box;
+  /** Assay method printed with the test ("HPLC", "Hexokinase"), if any. */
+  method: string | null;
 };
+
+/**
+ * A method printed on the line under a test ("Method : Photometry", or just "Hexokinase"),
+ * when that line isn't a result itself.
+ */
+export function methodLine(next: Row | undefined, row: Row): string | null {
+  if (!next || next.page !== row.page || parseRow(next)) return null;
+  const labelled = next.text.match(/^\s*method(?:ology)?\s*[:\-–]\s*(.+)$/i);
+  const text = labelled ? labelled[1].trim() : next.text.trim();
+  return isMethod(text) || (labelled && text.length <= 60) ? text : null;
+}
 
 export const REVIEW_THRESHOLD = 0.8;
 
@@ -99,6 +113,7 @@ export function extractResults(rows: Row[], matchMarker: Matcher = defaultMatche
       labFlag: parsed.flag,
       page: row.page,
       box: rowBox(row),
+      method: parsed.method ?? methodLine(rows[index + 1], row),
     };
 
     if (!match) {

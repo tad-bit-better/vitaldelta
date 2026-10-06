@@ -17,12 +17,19 @@ describe('extractWordResults', () => {
   it('reads a word result and the expected word beside it', () => {
     expect(extractWordResults([row('HIV Antibody, Rapid Card', 'Non Reactive', 'Non Reactive', '---')])).toEqual([
       {
-        name: 'HIV Antibody, Rapid Card', text: 'Non Reactive', expected: 'Non Reactive', page: 1,
+        name: 'HIV Antibody', text: 'Non Reactive', expected: 'Non Reactive', page: 1,
         // The whole row, so the review screen can show where it was printed.
         box: { page: 1, x: 40, y: 100, width: 315, height: 10 },
+        method: 'Rapid Card',
       },
     ]);
     expect(extractWordResults([row('HBsAg', 'Reactive')])[0]).toMatchObject({ text: 'Reactive', expected: null });
+  });
+
+  it('splits a method off the name, from the name or the line below', () => {
+    expect(extractWordResults([row('HIV Antibody, Rapid Card', 'Non Reactive', 'Non Reactive')])[0]).toMatchObject({ name: 'HIV Antibody', method: 'Rapid Card' });
+    const below = { ...row('Method : Immunochromatography'), y: 120 };
+    expect(extractWordResults([row('HBsAg', 'Non Reactive'), below])[0]).toMatchObject({ name: 'HBsAg', method: 'Immunochromatography' });
   });
 
   it('keeps digits that are part of a test name', () => {

@@ -65,6 +65,7 @@ export function toNewResult(d: Draft): NewResult {
     value: Number(d.value),
     textValue: null,
     expectedText: null,
+    method: d.source?.method ?? null,
     unit: d.unit.trim() || null,
     comparator: d.source?.comparator ?? null,
     refLow: toNumber(d.refLow),

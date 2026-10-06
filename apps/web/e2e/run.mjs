@@ -40,7 +40,7 @@ const PRIYA = 'Patient Name : Mrs. PRIYA NAIR   Age/Sex : 58 Y / F';
 const REPORTS = {
   'r1.pdf': { patient: ARJUN, date: '05/01/2023', rows: [['Haemoglobin', '14.6', 'g/dL', '13.0 - 17.0'], ['Total Cholesterol', '182', 'mg/dL', '< 200'], ['Homocysteine', '12', 'umol/L', '5 - 15']] },
   'r2.pdf': { patient: ARJUN, date: '12/07/2023', rows: [['Hemoglobin (Hb)', '13.3', 'g/dL', '13.5 - 17.5'], ['Cholesterol, Total', '205', 'mg/dL', '< 200'], ['Urine Protein', 'Negative', 'Negative']] },
-  'r3.pdf': { patient: ARJUN, date: '20/03/2024', rows: [['Haemoglobin', '12.4', 'g/dL', '13.0 - 17.0'], ['Total Cholesterol', '247', 'mg/dL', '< 200'], ['TSH', '4.0', 'uIU/mL', '0.4 - 4.2'], ['Urine Protein', 'Trace', 'Negative']] },
+  'r3.pdf': { patient: ARJUN, date: '20/03/2024', rows: [['Haemoglobin', '12.4', 'g/dL', '13.0 - 17.0'], ['Total Cholesterol', '247', 'mg/dL', '< 200'], ['TSH - CLIA', '4.0', 'uIU/mL', '0.4 - 4.2'], ['Urine Protein', 'Trace', 'Negative']] },
   'p1.pdf': { patient: PRIYA, date: '02/05/2024', rows: [['Haemoglobin', '11.9', 'g/dL', '12.0 - 15.5'], ['TSH', '5.1', 'uIU/mL', '0.4 - 4.2'], ['HbA1c', '6.1', '%', '']] },
 };
 
@@ -332,6 +332,15 @@ try {
   await openTest('Haemoglobin');
   await waitFor(`!!document.querySelector('.chart svg')`, 'trend chart');
   check((await evaluate(`document.querySelectorAll('.chart-mark').length`)) === 3, 'chart plots all three results');
+  await evaluate('history.back()');
+  await sleep(600);
+  await openTest('TSH');
+  await waitFor(`!!document.querySelector('.app-table')`, 'TSH results');
+  check((await text('.app-table'))?.includes('CLIA'), 'a method printed with the name ("TSH - CLIA") is split off and shown');
+  await evaluate('history.back()');
+  await sleep(600);
+  await openTest('Haemoglobin');
+  await waitFor(`!!document.querySelector('.chart svg')`, 'trend chart');
   await send('Page.reload');
   check(await waitFor(`!!document.querySelector('.chart svg')`, 'chart after reload'), 'test page survives reload');
   await evaluate('history.back()');

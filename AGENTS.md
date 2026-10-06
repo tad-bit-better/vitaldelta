@@ -66,7 +66,8 @@ Native mobile (React Native) is v2 and will reuse `packages/extraction`.
   The user always confirms which patient a report belongs to; names are only suggestions.
 - `Report` — id, profileId, collectedAt, labName, sourceFileName, createdAt
 - `Result` — id, reportId, markerId, value, unit, refLow, refHigh, confidence, userEdited;
-  results printed as words have value null and textValue/expectedText
+  results printed as words have value null and textValue/expectedText; method is the assay
+  method printed with the test ("HPLC"), split off the name
 - `Marker` — id (LOINC where possible), name, synonyms[], unit, plausibleMin/Max
 - Dates as ISO strings; refLow/refHigh nullable (one-sided ranges like "<200")
 

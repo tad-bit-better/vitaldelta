@@ -34,6 +34,7 @@ export default function TestDetail({ profileId, testKey }: { profileId: string; 
   const ranges = new Set(points.filter((p) => p.rangeSource === 'report').map((p) => rangeText(p)));
   const guidelines = [...new Set(points.map((p) => p.guidelineSource).filter((s): s is string => s !== null))];
   const all = [...points, ...otherUnits].sort((a, b) => b.date.localeCompare(a.date));
+  const methods = all.some((p) => p.method);
 
   return (
     <section className="app-card">
@@ -88,12 +89,13 @@ export default function TestDetail({ profileId, testKey }: { profileId: string; 
                 <th scope="col">Value</th>
                 <th scope="col">Range</th>
                 <th scope="col">Status</th>
+                {methods && <th scope="col">Method</th>}
                 <th scope="col">Lab</th>
               </tr>
             </thead>
             <tbody>
               {all.map((p) => (
-                <ResultRow key={p.resultId} point={p} comparable={p.unit === unit} />
+                <ResultRow key={p.resultId} point={p} comparable={p.unit === unit} methods={methods} />
               ))}
             </tbody>
           </table>
@@ -108,7 +110,7 @@ export default function TestDetail({ profileId, testKey }: { profileId: string; 
   );
 }
 
-function ResultRow({ point: p, comparable }: { point: Point; comparable: boolean }) {
+function ResultRow({ point: p, comparable, methods }: { point: Point; comparable: boolean; methods: boolean }) {
   return (
     <tr>
       <td>{formatDate(p.date)}</td>
@@ -121,6 +123,7 @@ function ResultRow({ point: p, comparable }: { point: Point; comparable: boolean
       <td>
         <StatusBadge status={p.status} />
       </td>
+      {methods && <td>{p.method ?? '—'}</td>}
       <td>{p.labName ?? '—'}</td>
     </tr>
   );

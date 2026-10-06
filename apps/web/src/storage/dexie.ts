@@ -29,7 +29,7 @@ export function hasPersistentData(): Promise<boolean> {
 /** Profiles saved before multi-patient support lack these fields. */
 const normalise = (p: Profile): Profile => ({ ...p, aliases: p.aliases ?? [], sex: p.sex ?? null });
 /** Results saved before word results existed lack these fields. */
-const normaliseResult = (r: Result): Result => ({ ...r, textValue: r.textValue ?? null, expectedText: r.expectedText ?? null });
+const normaliseResult = (r: Result): Result => ({ ...r, textValue: r.textValue ?? null, expectedText: r.expectedText ?? null, method: r.method ?? null });
 
 const byCollectedDesc = (a: Report, b: Report) => b.collectedAt.localeCompare(a.collectedAt) || b.createdAt.localeCompare(a.createdAt);
 

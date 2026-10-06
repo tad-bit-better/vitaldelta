@@ -1,3 +1,4 @@
+import { isMethod, splitMethod } from './methods';
 import type { Row } from './types';
 
 export type Comparator = '<' | '<=' | '>' | '>=';
@@ -23,6 +24,8 @@ export type ParsedRow = {
   banded: boolean;
   /** High/low flag printed by the lab, if any. */
   flag: 'high' | 'low' | null;
+  /** Assay method printed with the name or in its own column ("HPLC"), split off the name. */
+  method: string | null;
   /** The whole row text, for review screens and debugging. */
   text: string;
 };
@@ -180,6 +183,9 @@ export function parseRow(row: Row): ParsedRow | null {
   const trailing = name.match(/\s*(<=|>=|[<>≤≥])$/);
   if (trailing) name = name.slice(0, trailing.index);
   if (!/[a-z]/i.test(name)) return null;
+  // "HbA1c (HPLC)", "Glucose - Hexokinase", or a method column before the value.
+  const split = splitMethod(name);
+  name = split.name;
 
   const [, valueComparator, numberText, suffix] = chosen.t.text.match(VALUE_RE)!;
   const comparatorText = valueComparator ?? trailing?.[1];
@@ -204,6 +210,13 @@ export function parseRow(row: Row): ParsedRow | null {
     }
   }
 
+  // A method column after the value ("… | 13 - 40 | IFCC"): kept as the method, not read as the range.
+  let method = split.method;
+  const methodAt = rest.findIndex((_, i) => isMethod(rest.slice(i).join(' ')));
+  if (methodAt >= 0) {
+    method ??= rest.slice(methodAt).join(' ');
+    rest.splice(methodAt);
+  }
   const restText = rest.join(' ');
   let refLow: number | null = null;
   let refHigh: number | null = null;
@@ -222,6 +235,7 @@ export function parseRow(row: Row): ParsedRow | null {
       refText: bands.normal?.text ?? restText,
       banded: true,
       flag,
+      method,
       text: row.text,
     };
   }
@@ -251,6 +265,7 @@ export function parseRow(row: Row): ParsedRow | null {
     refText,
     banded: false,
     flag,
+    method,
     text: row.text,
   };
 }

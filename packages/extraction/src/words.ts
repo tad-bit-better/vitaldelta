@@ -1,3 +1,5 @@
+import { methodLine } from './extract';
+import { splitMethod } from './methods';
 import { nameKey } from './names';
 import { rowBox, type Box, type Row } from './types';
 
@@ -18,6 +20,8 @@ export type ExtractedWordResult = {
   page: number;
   /** The row it was read from, to show it on the page. */
   box: Box;
+  /** Assay method printed with the test ("Rapid Card"), if any. */
+  method: string | null;
 };
 
 /** Compares two word results ignoring case, spacing and hyphens: "Non-Reactive" = "non reactive". */
@@ -44,12 +48,12 @@ const clean = (s: string) => s.replace(/\s+/g, ' ').trim();
 export function extractWordResults(rows: Row[]): ExtractedWordResult[] {
   const results: ExtractedWordResult[] = [];
   const seen = new Set<string>();
-  for (const row of rows) {
+  for (const [index, row] of rows.entries()) {
     const at = row.items.findIndex((item, i) => i > 0 && WORD_RESULT.test(clean(item.text)));
     if (at < 0) continue;
     // A number column before the word means a numeric result with a note ("95 | mg/dL | Normal").
     if (row.items.slice(1, at).some((i) => /^[<>≤≥]?\d[\d,.]*$/.test(clean(i.text)))) continue;
-    const name = row.items.slice(0, at).map((i) => clean(i.text)).join(' ').replace(/[\s:,.-]+$/, '');
+    const { name, method } = splitMethod(row.items.slice(0, at).map((i) => clean(i.text)).join(' ').replace(/[\s:,.-]+$/, ''));
     if (!/[a-z]{2}/i.test(name) || name.length > 80 || NOT_A_TEST.test(name)) continue;
     const next = row.items[at + 1] ? clean(row.items[at + 1].text) : '';
     const result: ExtractedWordResult = {
@@ -58,6 +62,7 @@ export function extractWordResults(rows: Row[]): ExtractedWordResult[] {
       expected: WORD_RESULT.test(next) ? next : null,
       page: row.page,
       box: rowBox(row),
+      method: method ?? methodLine(rows[index + 1], row),
     };
     const key = `${nameKey(name)}|${result.text.toLowerCase()}`;
     if (seen.has(key)) continue;

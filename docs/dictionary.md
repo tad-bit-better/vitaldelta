@@ -19,6 +19,9 @@ Panels (how the dashboard groups tests: "Liver enzymes" within "Liver function t
 `src/panels.ts`, keyed by marker id; a test checks every marker is in exactly one panel, so add
 a new marker there too.
 
+Assay methods (HPLC, Hexokinase, Jaffe…) are not synonyms: they're split off names using the
+vocabulary in `src/methods.ts`, and stored as the result's method. Add a method there, not as a synonym.
+
 ## Synonym policy
 
 - **Exhaustive up front.** Each marker lists every genuinely different name we know of

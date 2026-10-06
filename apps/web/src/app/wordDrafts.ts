@@ -32,6 +32,7 @@ export function wordToNewResult(d: WordDraft): NewResult {
     value: null,
     textValue: d.text.trim(),
     expectedText: d.expected.trim() || null,
+    method: d.source?.method ?? null,
     unit: null,
     comparator: null,
     refLow: null,

@@ -77,6 +77,7 @@ export default function WordReview({ words, selectedKey, onSelect, onChange }: P
                   <th scope="row">
                     {w.name}
                     {w.edited && !rejected && <span className="rv-tag">edited</span>}
+                    {w.source?.method && <span className="rv-method">{w.source.method}</span>}
                   </th>
                   <td>
                     <strong>{w.text}</strong>
