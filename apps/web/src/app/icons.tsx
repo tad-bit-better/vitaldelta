@@ -7,6 +7,10 @@ const PATHS = {
   doc: 'M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M9 13h6M9 17h4',
   download: 'M12 4v11m-5-5 5 5 5-5M5 20h14',
   trend: 'm3 17 6-6 4 4 8-8M15 7h6v6',
+  edit: 'M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z',
+  back: 'm15 18-6-6 6-6',
+  copy: 'M9 9h11v11H9zM5 15H4V4h11v1',
+  check: 'm5 12 5 5L20 7',
 };
 
 export function Icon({ name, size = 16 }: { name: keyof typeof PATHS; size?: number }) {

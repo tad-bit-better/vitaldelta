@@ -17,6 +17,7 @@ Done when: live at a public URL with demo mode, linked from the resume.
 - [x] Day 8 (added): Grid/list layout for tests; guideline ranges for 10 tests (HbA1c, fasting glucose, lipids, eGFR, hs-CRP, vitamin D) when a report prints no range
 - [x] Day 9: Demo mode with synthetic reports; PWA + offline; `navigator.storage.persist()`; onboarding (storage choice, shared-computer note, data is per-browser, iPhone install nudge, not-medical-advice); accessibility
 - [x] Dashboard redesign: top bar with patient switcher and backup status, count tiles, results by panel with a range bar, reports and backup nudge beside; phones get a bottom Add bar and cards; add a missing range on the test page
+- [x] Review redesign: the PDF page beside the results with the selected value highlighted, a snippet of the printed row on each value to check, "Is this Total protein?" for unrecognised names, duplicate banner with Open/Add anyway, "Skip those and save"; phones open the page full screen
 - [ ] Day 10: README with architecture diagram + demo GIF (mention the CSP privacy guarantee), custom subdomain, LinkedIn post, add to resume
 
 ## Open items

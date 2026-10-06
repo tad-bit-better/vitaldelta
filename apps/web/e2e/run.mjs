@@ -155,9 +155,11 @@ const upload = async (file) => {
 };
 const clickLink = (label) =>
   evaluate(`(() => { const a = [...document.querySelectorAll('a')].find((a) => a.innerText.trim().startsWith(${JSON.stringify(label)})); a?.click(); return !!a; })()`);
+// "Report is for" is a select: pick the option whose text includes the name.
 const pickPatient = (name) =>
-  evaluate(`(() => { const o = [...document.querySelectorAll('.app-patient-options .app-option-row')].find((o) => o.innerText.includes(${JSON.stringify(name)})); o?.querySelector('input').click(); return !!o; })()`);
-const saveBar = () => text('.app-savebar-status');
+  evaluate(`(() => { const s = document.querySelector('#review-patient'); const o = [...s.options].find((o) => o.text.includes(${JSON.stringify(name)})); if (!o) return false; s.value = o.value; s.dispatchEvent(new Event('change', { bubbles: true })); return true; })()`);
+const patientOptions = () => evaluate(`[...document.querySelectorAll('#review-patient option')].slice(1).map((o) => o.text).join(' | ')`);
+const saveBar = () => text('.rv-savebar-status');
 const saveEnabled = () => evaluate(`![...document.querySelectorAll('button')].find((b) => b.innerText.startsWith('Save ')).disabled`);
 
 /** Uploads a report; `beforeReview` runs while low-confidence rows are still pending. */
@@ -167,9 +169,10 @@ async function addReportWith(pick, beforeReview = async () => {}) {
   await click('+ Add a report') || (await click('Add a report'));
   await waitFor(`!!document.querySelector('input[type=file]')`, 'upload screen');
   await pick();
-  await waitForText('Who is this report for?');
+  await waitForText('Report is for');
   await beforeReview();
-  while (await click('Looks right')) await sleep(30);
+  // Answer every check card with its main button ("The value is right", "Yes, it's …").
+  while (await evaluate(`(() => { const b = document.querySelector('.rv-check [data-primary]:not(:disabled)'); b?.click(); return !!b; })()`)) await sleep(30);
 }
 // Patients are listed in the top bar's switcher menu (clickable even while it's closed).
 const PATIENTS = `[...document.querySelectorAll('.app-switcher .app-menu-item:not(.app-menu-footer)')]`;
@@ -242,8 +245,8 @@ try {
   await a11y('dashboard');
   await fullShot('demo');
   await addReportWith(() => click('Use a made-up sample report'));
-  const options = (await text('.app-patient-options')) ?? '';
-  check(/^Asha Rao \(sample\)[^]*?Suggested[^]*Vikram/.test(options), 'sample report reads through the real pipeline and suggests its patient');
+  check(/^Asha Rao \(sample\) \(suggested\) \| Vikram/.test((await patientOptions()) ?? ''), 'sample report reads through the real pipeline and suggests its patient');
+  check(await waitFor(`document.querySelector('.rv-page img')?.complete && document.querySelector('.rv-mark-selected') !== null`, 'page image'), 'the PDF page is shown beside the results, with the value highlighted');
   await a11y('review');
   check(await evaluate(`!!document.activeElement?.closest('#review-patient')`), 'after the last row to check, focus moves to the next thing to do (choose the patient)');
   await pickPatient('Asha Rao (sample)');
@@ -262,7 +265,7 @@ try {
   await click('Just this session');
   await waitForText('Add your first report');
   await addReport('r1.pdf');
-  check((await text('.app-patient-pick > p'))?.includes('Arjun Mehta · male · 34 years'), 'patient name, sex and age detected');
+  check((await text('#review-detected'))?.includes('Arjun Mehta · male · 34 years'), 'patient name, sex and age detected');
   check(!(await saveEnabled()) && (await saveBar()).includes('choose who this report is for'), 'save blocked until a patient is chosen');
   await pickPatient('New patient');
   check((await evaluate(`document.querySelector('#review-new-name').value`)) === 'Arjun Mehta', 'new patient pre-filled with detected name');
@@ -276,13 +279,14 @@ try {
   await click('Save on this device');
   await waitForText('Add your first report');
   await addReport('r1.pdf', async () => {
-    check((await text('.app-result-pending'))?.includes('Homocysteine'), 'unrecognised test is held for review');
+    check((await text('.rv-check'))?.includes('Homocysteine') && (await text('.rv-check'))?.includes('Name not recognised'), 'unrecognised test is held for review');
+    check(await waitFor(`document.querySelector('.rv-check .rv-snippet img')?.complete`, 'snippet'), 'each value to check shows where it was printed');
   });
   await pickPatient('New patient');
   await save();
   for (const file of ['r2.pdf', 'r3.pdf']) {
     await addReport(file);
-    check((await text('.app-patient-options'))?.includes('Arjun Mehta Suggested'), `${file}: existing patient suggested`);
+    check((await patientOptions())?.startsWith('Arjun Mehta (suggested)'), `${file}: existing patient suggested`);
     await pickPatient('Arjun Mehta');
     await save();
   }
@@ -431,7 +435,7 @@ try {
     await goto('/app');
     check(await waitForText('Arjun Mehta'), 'app opens offline with saved data');
     await addReport('r1.pdf');
-    check(Boolean(await text('.app-patient-options')), 'a PDF is read offline');
+    check(Boolean(await text('#review-patient')), 'a PDF is read offline');
     await click('Discard');
   }
 

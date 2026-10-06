@@ -16,10 +16,12 @@ const FILLER = new Set(['serum', 'plasma', 'blood', 'whole', 'level', 'levels', 
  * no punctuation, spacing or filler words. "S. Haemoglobin (Hb)" → "hemoglobinhb".
  */
 export function nameKey(name: string): string {
+  return nameWords(name).join('');
+}
+
+/** The words of nameKey, before they're joined: "S. Total Protein" → ["total", "protein"]. */
+export function nameWords(name: string): string[] {
   let text = name.normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase();
   for (const [re, replacement] of SPELLING) text = text.replace(re, replacement);
-  return text
-    .split(/[^a-z0-9]+/)
-    .filter((word) => word && !FILLER.has(word))
-    .join('');
+  return text.split(/[^a-z0-9]+/).filter((word) => word && !FILLER.has(word));
 }

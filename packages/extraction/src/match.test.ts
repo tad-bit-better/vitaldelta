@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { matchMarker, similarity } from './match';
+import { matchMarker, similarity, suggestMarker } from './match';
 
 const id = (name: string) => matchMarker(name)?.marker.id ?? null;
 
@@ -57,5 +57,18 @@ describe('similarity', () => {
     expect(similarity('abcdef', 'abcdef')).toBe(1);
     expect(similarity('abcdef', 'abcdeg')).toBeCloseTo(5 / 6);
     expect(similarity('abc', 'xyzxyzxyz')).toBe(0);
+  });
+});
+
+describe('suggestMarker', () => {
+  it('suggests the one test whose name contains every printed word', () => {
+    expect(suggestMarker('Serum protein', 'g/dL')?.name).toBe('Total protein');
+  });
+
+  it('suggests nothing when several tests fit, the unit can’t convert, or a word is extra', () => {
+    expect(suggestMarker('Bilirubin', 'mg/dL')).toBeNull();
+    expect(suggestMarker('Serum protein', '%')).toBeNull();
+    expect(suggestMarker('Urine protein', 'mg/dL')).toBeNull();
+    expect(suggestMarker('Homocysteine', 'µmol/L')).toBeNull();
   });
 });

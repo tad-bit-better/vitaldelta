@@ -1,5 +1,5 @@
 import { nameKey } from './names';
-import type { Row } from './types';
+import { rowBox, type Box, type Row } from './types';
 
 // Results printed as words: serology, urine routine, cultures. Kept to words that only
 // ever appear as a result, so a row's name column can't be mistaken for one.
@@ -16,6 +16,8 @@ export type ExtractedWordResult = {
   /** The expected result printed beside it (the "reference" column), if any. */
   expected: string | null;
   page: number;
+  /** The row it was read from, to show it on the page. */
+  box: Box;
 };
 
 /** Compares two word results ignoring case, spacing and hyphens: "Non-Reactive" = "non reactive". */
@@ -55,6 +57,7 @@ export function extractWordResults(rows: Row[]): ExtractedWordResult[] {
       text: clean(row.items[at].text),
       expected: WORD_RESULT.test(next) ? next : null,
       page: row.page,
+      box: rowBox(row),
     };
     const key = `${nameKey(name)}|${result.text.toLowerCase()}`;
     if (seen.has(key)) continue;

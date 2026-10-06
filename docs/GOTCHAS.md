@@ -39,6 +39,16 @@ what happens, why, and what to do.
   `page.streamTextContent()` with `getReader()` instead. The e2e deletes
   `ReadableStream.prototype[Symbol.asyncIterator]` before the app loads, so Chrome catches this.
   Mac Safari runs the same WebKit as iPhones and is the quickest way to reproduce an iOS failure.
+- **pdf.js detaches the bytes it's given** (they move to its worker). The upload keeps the
+  original `Uint8Array` for the review screen and hands pdf.js copies (`bytes.slice()`).
+- **The review screen draws pages itself** (`pdf/pageImages.ts`): one page at a time, ~1400 px
+  wide, as an in-memory JPEG blob (`img-src blob:` is allowed). Nothing is stored; leaving the
+  review frees the document and every blob URL. `disableFontFace` stays on for drawing too:
+  glyphs are drawn as outlines, so no font files are loaded (the CSP's `font-src` would refuse them).
+- **Each extracted result carries `box`**, the row's position on its page (PDF points,
+  top-left origin). The snippet on a check card is a CSS crop of the page image, positioned
+  with **margins**, not `top`/`left`: margin percentages are of the container's width (like the
+  image's scale), so the crop stays exact when `min-height` makes the strip taller than its aspect ratio.
 - **When a PDF can't be read, the upload screen shows "Technical details"** (pdf.js's error and the
   browser version, never report content). Ask for that line when a report fails on someone's device.
 - **pdf.js 6 API changes from older docs**: `isEvalSupported` no longer exists, and
@@ -287,6 +297,10 @@ what happens, why, and what to do.
 - **Saved "not in our list" results are matched again when shown** (`resolveMarkerId` in
   `series.ts`), so a name the matcher learns later joins the test's history. Only exact matches whose
   unit is already the marker's standard unit; stored data is never rewritten.
+- **"Is this the same test as …?" (`suggestMarker`) is only a question.** It suggests a marker
+  when every word of the unrecognised name appears in that marker's name or a synonym, the unit
+  converts, and it's the closest fit (fewest extra words; a tie suggests nothing). Accepting it
+  converts the value and range into the marker's unit; nothing changes until the user says yes.
 - **A flag in its own column before the value** ("TSH | H | 5.2") is the value's flag, not part of the name.
 - **Fuzzy name matching requires short words to match exactly and in order**
   (Vitamin B ≠ Vitamin D, LDL/HDL ≠ HDL/LDL). Short abbreviations never fuzzy-match.

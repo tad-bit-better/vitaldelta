@@ -27,6 +27,22 @@ export class PdfNoTextError extends Error {
   }
 }
 
+/**
+ * Starts loading a PDF. pdf.js takes over (detaches) the bytes it's given, so pass a copy if
+ * they're needed again. Fonts are never added to the page: text is read as data, and pages are
+ * drawn with each glyph's outline (no font files, which the CSP's font-src would refuse).
+ */
+export function openDocument(bytes: Uint8Array, password?: string) {
+  return getDocument({
+    data: bytes,
+    password,
+    cMapUrl: `${assetBase}cmaps/`,
+    cMapPacked: true,
+    standardFontDataUrl: `${assetBase}standard_fonts/`,
+    disableFontFace: true,
+  });
+}
+
 type PdfPage = Awaited<ReturnType<Awaited<ReturnType<typeof getDocument>['promise']>['getPage']>>;
 
 /**
@@ -50,15 +66,7 @@ async function textItems(page: PdfPage) {
  * Everything runs locally; the file never leaves the browser.
  */
 export async function readPdf(data: ArrayBuffer, password?: string): Promise<TextItem[]> {
-  const task = getDocument({
-    data: new Uint8Array(data),
-    password,
-    cMapUrl: `${assetBase}cmaps/`,
-    cMapPacked: true,
-    standardFontDataUrl: `${assetBase}standard_fonts/`,
-    // We only read text, never render, so don't load the PDF's fonts into the page.
-    disableFontFace: true,
-  });
+  const task = openDocument(new Uint8Array(data), password);
 
   let doc;
   try {

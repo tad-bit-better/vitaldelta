@@ -16,7 +16,11 @@ function row(...cells: string[]): Row {
 describe('extractWordResults', () => {
   it('reads a word result and the expected word beside it', () => {
     expect(extractWordResults([row('HIV Antibody, Rapid Card', 'Non Reactive', 'Non Reactive', '---')])).toEqual([
-      { name: 'HIV Antibody, Rapid Card', text: 'Non Reactive', expected: 'Non Reactive', page: 1 },
+      {
+        name: 'HIV Antibody, Rapid Card', text: 'Non Reactive', expected: 'Non Reactive', page: 1,
+        // The whole row, so the review screen can show where it was printed.
+        box: { page: 1, x: 40, y: 100, width: 315, height: 10 },
+      },
     ]);
     expect(extractWordResults([row('HBsAg', 'Reactive')])[0]).toMatchObject({ text: 'Reactive', expected: null });
   });

@@ -1,5 +1,6 @@
 import { markers as allMarkers, type Marker } from './dictionary';
-import { nameKey } from './names';
+import { nameKey, nameWords } from './names';
+import { canonicalUnit, convert } from './units';
 
 export type MarkerMatch = {
   marker: Marker;
@@ -87,6 +88,31 @@ export function createMatcher(markers: Marker[] = allMarkers) {
 }
 
 export const matchMarker = createMatcher();
+
+const words = (name: string) => new Set(nameWords(name));
+
+/**
+ * For a test the matcher didn't recognise, a known test it's probably the same as, for the
+ * review screen to ask about ("Serum protein": is it Total protein?). The printed name's words
+ * must all appear in a marker's name or synonym, and its unit must convert to the marker's.
+ * The closest fit (fewest extra words) wins; a tie suggests nothing ("Bilirubin": total, direct
+ * or indirect?). Never applied without the user saying yes.
+ */
+export function suggestMarker(printedName: string, unit: string | null): Marker | null {
+  const printed = words(printedName);
+  if (printed.size === 0) return null;
+  const extra = new Map<Marker, number>();
+  for (const marker of allMarkers) {
+    if (unit && convert(1, canonicalUnit(unit) ?? unit, marker.unit, marker.conversions) === null) continue;
+    for (const name of [marker.name, ...marker.synonyms].map(words)) {
+      if (![...printed].every((w) => name.has(w))) continue;
+      extra.set(marker, Math.min(extra.get(marker) ?? Infinity, name.size - printed.size));
+    }
+  }
+  const best = Math.min(...extra.values());
+  const closest = [...extra].filter(([, n]) => n === best);
+  return closest.length === 1 ? closest[0][0] : null;
+}
 
 /** 1 − (edit distance / longer length). */
 export function similarity(a: string, b: string): number {

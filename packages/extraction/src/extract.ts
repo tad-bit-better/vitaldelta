@@ -1,6 +1,6 @@
 import { matchMarker as defaultMatcher, type MarkerMatch } from './match';
 import { parseRow, readBands, type Comparator } from './parse';
-import type { Row } from './types';
+import { rowBox, type Box, type Row } from './types';
 import { canonicalUnit, convert } from './units';
 
 /** Why a result's confidence was lowered. Shown on the review screen. */
@@ -36,6 +36,8 @@ export type ExtractedResult = {
   confidence: number;
   issues: Issue[];
   page: number;
+  /** The row it was read from, to show it on the page. */
+  box: Box;
 };
 
 export const REVIEW_THRESHOLD = 0.8;
@@ -96,6 +98,7 @@ export function extractResults(rows: Row[], matchMarker: Matcher = defaultMatche
       original: { valueText: parsed.valueText, unit: parsed.unit, refText: parsed.refText },
       labFlag: parsed.flag,
       page: row.page,
+      box: rowBox(row),
     };
 
     if (!match) {

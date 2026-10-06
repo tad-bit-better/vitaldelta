@@ -204,7 +204,7 @@ export default function AppShell() {
         ) : !data ? null : (
           <StorageContext.Provider value={storage}>
             <DataContext.Provider value={data}>
-              <div className={`app-layout app-layout-${route.name}${welcome ? ' app-layout-solo' : ''}`}>
+              <div className={`app-layout app-layout-${route.name === 'add' && extracted ? 'review' : route.name}${welcome ? ' app-layout-solo' : ''}`}>
                 <div className="app-content">
                   {route.name === 'add' ? (
                     extracted ? (
@@ -212,6 +212,8 @@ export default function AppShell() {
                         extracted={extracted}
                         onSaved={(profileId) => leaveAdd(patientPath(profileId), 'Report saved.')}
                         onCancel={() => leaveAdd('/app')}
+                        onBack={() => setExtracted(null)}
+                        onOpenPatient={(profileId) => leaveAdd(patientPath(profileId))}
                       />
                     ) : (
                       <Upload

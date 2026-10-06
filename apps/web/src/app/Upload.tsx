@@ -19,6 +19,8 @@ export type Extracted = {
   words: ExtractedWordResult[];
   detectedDate: DetectedDate | null;
   patient: DetectedPatient;
+  /** The PDF itself, kept in memory only while reviewing, to show where each value came from. */
+  pdf: { bytes: Uint8Array; password?: string };
 };
 
 /**
@@ -59,7 +61,9 @@ export default function Upload({ onExtracted, onCancel, sample }: Props) {
     setError(null);
     setDetail(null);
     try {
-      const items = await readPdf(await selected.arrayBuffer(), pw);
+      const bytes = new Uint8Array(await selected.arrayBuffer());
+      // pdf.js detaches what it's given; keep the original for the review screen.
+      const items = await readPdf(bytes.slice().buffer, pw);
       // Extraction runs on this thread; let the browser show the new step first.
       setStage('finding');
       await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve)));
@@ -70,7 +74,7 @@ export default function Upload({ onExtracted, onCancel, sample }: Props) {
         setError('We couldn’t find any lab results in this PDF. Is it a lab report?');
         return;
       }
-      onExtracted({ fileName: selected.name, results, words, detectedDate: detectReportDate(rows), patient: detectPatient(rows) });
+      onExtracted({ fileName: selected.name, results, words, detectedDate: detectReportDate(rows), patient: detectPatient(rows), pdf: { bytes, password: pw } });
     } catch (err) {
       if (err instanceof PdfPasswordError) {
         setNeedsPassword(true);
