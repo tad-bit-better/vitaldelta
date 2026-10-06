@@ -1,5 +1,6 @@
 import { methodLine } from './extract';
 import { splitMethod } from './methods';
+import { smallPrint } from './parse';
 import { nameKey } from './names';
 import { rowBox, type Box, type Row } from './types';
 
@@ -53,7 +54,11 @@ export function extractWordResults(rows: Row[]): ExtractedWordResult[] {
     if (at < 0) continue;
     // A number column before the word means a numeric result with a note ("95 | mg/dL | Normal").
     if (row.items.slice(1, at).some((i) => /^[<>≤≥]?\d[\d,.]*$/.test(clean(i.text)))) continue;
-    const { name, method } = splitMethod(row.items.slice(0, at).map((i) => clean(i.text)).join(' ').replace(/[\s:,.-]+$/, ''));
+    // A method in small print between the name and the result is the method, not part of the name.
+    const small = smallPrint(row.items, at);
+    const split = splitMethod(row.items.slice(0, at).filter((i) => !small.includes(i)).map((i) => clean(i.text)).join(' ').replace(/[\s:,.-]+$/, ''));
+    const name = split.name;
+    const method = small.length ? small.map((i) => clean(i.text)).join(' ') : split.method;
     if (!/[a-z]{2}/i.test(name) || name.length > 80 || NOT_A_TEST.test(name)) continue;
     const next = row.items[at + 1] ? clean(row.items[at + 1].text) : '';
     const result: ExtractedWordResult = {

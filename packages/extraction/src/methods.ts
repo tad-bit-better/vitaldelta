@@ -29,7 +29,7 @@ const GENERIC = new Set(
   method methods methodology by with without and or using modified rate end point
   endpoint reaction assay technique automated auto analyser analyzer uv nadh rapid electrode
   electrodes ion selective flow electrical buffer amp p5p green purple blue latex tandem mass
-  rt reverse phase high performance liquid sandwich competitive two step enhanced
+  rt reverse phase high performance liquid sandwich competitive two step enhanced capillary
 `
     .split(/\s+/)
     .filter(Boolean),

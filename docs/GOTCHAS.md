@@ -303,6 +303,9 @@ what happens, why, and what to do.
   and one is a specific method name; generic words ("rapid", "modified") never count alone, and
   "direct"/"indirect" only in "direct ISE", so "Bilirubin (Direct)" stays direct bilirubin.
   Words that are also test names (microscopy, electrophoresis, esterase, peroxidase) are left out.
+  **Small print is a stronger signal than the vocabulary**: text-only items between the name and
+  the value in a font under 80% of the name's height are the method, whatever they say ("SF Cube
+  cell analysis", "Microscopic"); see `smallPrint()` in `parse.ts`.
   The method is stored on the result; names saved before this still have it, so `testName()`
   in `series.ts` strips it when grouping.
 - **"Is this the same test as …?" (`suggestMarker`) is only a question.** It suggests a marker

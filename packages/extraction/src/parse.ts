@@ -1,5 +1,5 @@
 import { isMethod, splitMethod } from './methods';
-import type { Row } from './types';
+import type { Row, TextItem } from './types';
 
 export type Comparator = '<' | '<=' | '>' | '>=';
 
@@ -77,6 +77,18 @@ function normalise(text: string): string {
  * Superscript units are often split across items ("10", "3", "/µL"), so they're
  * joined on the whole row: "10 3 /µL", "x 10³/µL", "10^3 / uL" → "10^3/µL".
  */
+/**
+ * Text-only items between a row's name and `end` (the value) printed clearly smaller than the
+ * name: a method column in small print, whatever it says ("SF Cube cell analysis",
+ * "Microscopic"). Font size is the signal, so methods missing from the vocabulary are caught too.
+ */
+export function smallPrint(items: TextItem[], end: number): TextItem[] {
+  const name = items.findIndex((it) => /[a-z]{2}/i.test(it.text));
+  if (name < 0 || end <= name + 1) return [];
+  const height = items[name].height;
+  return items.slice(name + 1, end).filter((it) => /[a-z]{2}/i.test(it.text) && !/\d/.test(it.text) && it.height < height * 0.8);
+}
+
 function tokenise(row: Row): Token[] {
   const joined = row.items
     .map((item) => normalise(item.text))
@@ -156,7 +168,10 @@ function isUnit(token: string): boolean {
  * so it works across lab layouts. Returns null for rows that don't look like a result
  * (headers, addresses, notes). Matching names to markers happens later.
  */
-export function parseRow(row: Row): ParsedRow | null {
+export function parseRow(printed: Row): ParsedRow | null {
+  // A method column in small print between the name and the value ("WBC Count | SF Cube cell analysis | 10570").
+  const small = smallPrint(printed.items, printed.items.findIndex((it, i) => i > 0 && /\d/.test(it.text)));
+  const row = small.length ? { ...printed, items: printed.items.filter((it) => !small.includes(it)) } : printed;
   const tokens = tokenise(row);
 
   // The value is the first standalone number after some text. Prefer a number that
@@ -211,7 +226,7 @@ export function parseRow(row: Row): ParsedRow | null {
   }
 
   // A method column after the value ("… | 13 - 40 | IFCC"): kept as the method, not read as the range.
-  let method = split.method;
+  let method = small.length ? small.map((it) => it.text.trim()).join(' ') : split.method;
   const methodAt = rest.findIndex((_, i) => isMethod(rest.slice(i).join(' ')));
   if (methodAt >= 0) {
     method ??= rest.slice(methodAt).join(' ');

@@ -31,6 +31,25 @@ describe('lab layouts', () => {
     expect(one('Bilirubin (Direct)', '0.2', 'mg/dL', '0 - 0.3')).toMatchObject({ markerId: '1968-7', method: null });
   });
 
+  // Synthetic, like a report whose method column is in small print between name and result.
+  it('reads small print between the name and the value as the method, whatever it says', () => {
+    const smallMethod = (name: string, method: string, ...rest: string[]): Row => {
+      const r = row(name, method, ...rest);
+      r.items[1] = { ...r.items[1], height: 6 };
+      return r;
+    };
+    const [wbc, neut, hb] = extractResults([
+      smallMethod('WBC Count', 'SF Cube cell analysis', 'H', '10570', '/cmm', '4000 - 10000'),
+      { ...smallMethod('Neutrophils', 'Microscopic', '73', '%', '40 - 80'), y: 125 },
+      { ...smallMethod('Hemoglobin', 'Colorimetric', '14.5', 'g/dL', '13.0 - 16.5'), y: 145 },
+    ]);
+    expect(wbc).toMatchObject({ markerId: '6690-2', printedName: 'WBC Count', method: 'SF Cube cell analysis', labFlag: 'high', value: 10.57 });
+    expect(neut).toMatchObject({ markerId: '770-8', printedName: 'Neutrophils', method: 'Microscopic', value: 73 });
+    expect(hb).toMatchObject({ markerId: '718-7', method: 'Colorimetric' });
+    // The same words at full size are part of the name (no layout signal, and not in the vocabulary).
+    expect(one('WBC Count', 'SF Cube cell analysis', '10570', '/cmm', '4000 - 10000')).toMatchObject({ markerId: null });
+  });
+
   it('reads a method column after the range without spoiling the range', () => {
     expect(one('SGPT (ALT)', '36', 'U/L', '13 - 40', 'IFCC without P5P')).toMatchObject({ markerId: '1742-6', refLow: 13, refHigh: 40, method: 'IFCC without P5P', issues: [] });
   });
