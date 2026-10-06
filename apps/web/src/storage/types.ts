@@ -74,6 +74,11 @@ export interface Storage {
   saveReport(profileId: string, report: NewReport, results: NewResult[]): Promise<Report>;
   deleteReport(id: string): Promise<void>;
   listResults(filter?: { markerId?: string; profileId?: string }): Promise<Result[]>;
+  /** Sets a saved result's range, e.g. one the report printed but wasn't read. Marks it user-edited. */
+  updateResultRange(id: string, range: Pick<Result, 'refLow' | 'refHigh'>): Promise<Result>;
+  /** When a backup file was last made from this data (ISO), or null if never. */
+  lastBackupAt(): Promise<string | null>;
+  setLastBackupAt(at: string): Promise<void>;
   /**
    * Adds a backup's patients, reports and results, all or nothing. Anything whose id is
    * already here is left as it is (so restoring the same backup twice changes nothing).

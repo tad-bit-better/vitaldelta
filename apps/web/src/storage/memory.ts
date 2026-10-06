@@ -7,6 +7,7 @@ export function createMemoryStorage(): Storage {
   let profiles: Profile[] = [];
   let reports: Report[] = [];
   let results: Result[] = [];
+  let lastBackup: string | null = null;
 
   const reportIdsOf = (profileId: string) => new Set(reports.filter((r) => r.profileId === profileId).map((r) => r.id));
 
@@ -67,6 +68,22 @@ export function createMemoryStorage(): Storage {
       );
     },
 
+    async updateResultRange(id, range) {
+      const existing = results.find((r) => r.id === id);
+      if (!existing) throw new Error(`No result ${id}`);
+      const updated = { ...existing, ...range, userEdited: true };
+      results = results.map((r) => (r.id === id ? updated : r));
+      return updated;
+    },
+
+    async lastBackupAt() {
+      return lastBackup;
+    },
+
+    async setLastBackupAt(at) {
+      lastBackup = at;
+    },
+
     async importBackup(backup) {
       const has = (list: { id: string }[]) => new Set(list.map((i) => i.id));
       const [profileIds, reportIds, resultIds] = [has(profiles), has(reports), has(results)];
@@ -85,6 +102,7 @@ export function createMemoryStorage(): Storage {
       profiles = [];
       reports = [];
       results = [];
+      lastBackup = null;
     },
   };
 }

@@ -7,6 +7,7 @@ class VitalDeltaDb extends Dexie {
   profiles!: EntityTable<Profile, 'id'>;
   reports!: EntityTable<Report, 'id'>;
   results!: EntityTable<Result, 'id'>;
+  meta!: EntityTable<{ key: string; value: string }, 'key'>;
 
   constructor() {
     super(DB_NAME);
@@ -15,6 +16,8 @@ class VitalDeltaDb extends Dexie {
       reports: 'id, profileId, collectedAt',
       results: 'id, reportId, markerId',
     });
+    // Small app facts, e.g. when the last backup was made.
+    this.version(2).stores({ meta: 'key' });
   }
 }
 
@@ -109,6 +112,24 @@ export function createDexieStorage(): Storage {
             : await db.results.toArray();
       if (filter.markerId !== undefined) results = results.filter((r) => r.markerId === filter.markerId);
       return results.map(normaliseResult);
+    },
+
+    async updateResultRange(id, range) {
+      return db.transaction('rw', db.results, async () => {
+        const existing = await db.results.get(id);
+        if (!existing) throw new Error(`No result ${id}`);
+        const updated = { ...normaliseResult(existing), ...range, userEdited: true };
+        await db.results.put(updated);
+        return updated;
+      });
+    },
+
+    async lastBackupAt() {
+      return (await db.meta.get('lastBackupAt'))?.value ?? null;
+    },
+
+    async setLastBackupAt(at) {
+      await db.meta.put({ key: 'lastBackupAt', value: at });
     },
 
     async importBackup(backup) {

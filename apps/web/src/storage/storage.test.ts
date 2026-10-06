@@ -143,6 +143,26 @@ describe.each([
     expect(await storage.listResults()).toHaveLength(2);
   });
 
+  it('sets a result’s range and marks it edited', async () => {
+    storage = create();
+    const a = await person('Arjun Mehta');
+    await storage.saveReport(a.id, report('2024-01-10'), [result({ refLow: null, refHigh: null })]);
+    const [saved] = await storage.listResults();
+    const updated = await storage.updateResultRange(saved.id, { refLow: 40, refHigh: 129 });
+    expect(updated).toMatchObject({ refLow: 40, refHigh: 129, userEdited: true, value: 13.5 });
+    expect((await storage.listResults())[0]).toMatchObject({ refLow: 40, refHigh: 129, userEdited: true });
+  });
+
+  it('remembers when the last backup was made, until everything is deleted', async () => {
+    storage = create();
+    expect(await storage.lastBackupAt()).toBeNull();
+    await storage.setLastBackupAt('2026-10-06T10:00:00.000Z');
+    expect(await storage.lastBackupAt()).toBe('2026-10-06T10:00:00.000Z');
+    await storage.deleteAll();
+    storage = create();
+    expect(await storage.lastBackupAt()).toBeNull();
+  });
+
   it('deletes everything', async () => {
     storage = create();
     const me = await person('Arjun Mehta');

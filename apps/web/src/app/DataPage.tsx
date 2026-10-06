@@ -1,20 +1,12 @@
 import { useEffect, useState } from 'react';
-import { BackupError, backupFileName, createBackup, deleteEverything, parseBackup, type Backup } from '../storage';
+import { BackupError, deleteEverything, parseBackup, type Backup } from '../storage';
+import { backupState, downloadBackup } from './backupFile';
+import { formatDate } from './format';
 import { useAppData } from './DataContext';
 import IosNote from './IosNote';
 import { useStorage } from './StorageContext';
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
-
-/** Hands the user a file. Nothing is uploaded: the file is made in the browser. */
-function download(name: string, text: string) {
-  const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = name;
-  link.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
 
 type Picked = { fileName: string; backup: Backup; adds: { profiles: number; reports: number; results: number } };
 
@@ -113,11 +105,18 @@ export default function DataPage({ onDeletedAll }: { onDeletedAll: () => void })
             type="button"
             className="app-btn"
             disabled={empty}
-            onClick={async () => download(backupFileName(), JSON.stringify(await createBackup(storage), null, 2))}
+            onClick={() => void downloadBackup(storage, data)}
           >
             Download backup
           </button>
         </div>
+        {!empty && !session && (
+          <p className="app-note">
+            {data.lastBackupAt
+              ? `Last backup made ${formatDate(data.lastBackupAt.slice(0, 10))}${backupState(data) === 'behind' ? '; reports added since aren’t in it' : ''}.`
+              : 'No backup made from this browser yet.'}
+          </p>
+        )}
       </div>
 
       <div className="app-group app-data-section">

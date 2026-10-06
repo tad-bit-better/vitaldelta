@@ -1,9 +1,11 @@
 import { describeStatus, markers } from '@vitaldelta/extraction';
+import { useEffect, useRef, useState } from 'react';
 import { formatDate, formatNumber, formatPercent } from './format';
 import { forProfile, useAppData } from './DataContext';
 import Link from './Link';
 import { patientPath } from './router';
 import { buildSeries, type Point } from './series';
+import { useStorage } from './StorageContext';
 import StatusBadge from './StatusBadge';
 import { rangeCell, rangeText } from './status';
 import TrendChart from './TrendChart';
@@ -54,6 +56,7 @@ export default function TestDetail({ profileId, testKey }: { profileId: string; 
         </p>
         <StatusBadge status={latest.status} />
         <p className="app-muted">{describeStatus(latest)}.</p>
+        {latest.refLow === null && latest.refHigh === null && <AddRange point={latest} unit={latest.unit} />}
         {change && (
           <p className="app-muted">
             Changed by {formatPercent(change.percent)} since {formatDate(change.from.date)} (
@@ -120,6 +123,59 @@ function ResultRow({ point: p, comparable }: { point: Point; comparable: boolean
       </td>
       <td>{p.labName ?? '—'}</td>
     </tr>
+  );
+}
+
+/**
+ * For a result saved without a range (the report printed none, or it wasn't read): type in
+ * the range printed on the report. Applies to that one result, marked as edited by the user.
+ */
+function AddRange({ point, unit }: { point: Point; unit: string | null }) {
+  const storage = useStorage();
+  const data = useAppData();
+  const [low, setLow] = useState('');
+  const [high, setHigh] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const first = useRef<HTMLInputElement>(null);
+  // Arriving from the dashboard's "Add one" link: go straight to the form.
+  useEffect(() => {
+    if (window.location.hash !== '#add-range') return;
+    first.current?.scrollIntoView({ block: 'center' });
+    first.current?.focus({ preventScroll: true });
+  }, []);
+
+  const parse = (text: string) => (text.trim() === '' ? null : Number(text.replace(',', '.')));
+  return (
+    <form
+      id="add-range"
+      className="app-add-range"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        const [refLow, refHigh] = [parse(low), parse(high)];
+        if ((refLow !== null && !Number.isFinite(refLow)) || (refHigh !== null && !Number.isFinite(refHigh))) return setError('Enter numbers only.');
+        if (refLow === null && refHigh === null) return setError('Enter a lower limit, an upper limit or both.');
+        if (refLow !== null && refHigh !== null && refLow > refHigh) return setError('The lower limit is above the upper limit.');
+        await storage.updateResultRange(point.resultId, { refLow, refHigh });
+        await data.reload();
+      }}
+    >
+      <p>
+        <strong>Add the range from the report.</strong>{' '}
+        <span className="app-muted">If the {formatDate(point.date)} report prints one, type it here{unit ? ` in ${unit}` : ''}. Leave one side empty for a range like “up to 200” or “60 and above”.</span>
+      </p>
+      <div className="app-row">
+        <label className="app-field">
+          <span>Lower limit</span>
+          <input ref={first} inputMode="decimal" value={low} onChange={(e) => { setLow(e.target.value); setError(null); }} />
+        </label>
+        <label className="app-field">
+          <span>Upper limit</span>
+          <input inputMode="decimal" value={high} onChange={(e) => { setHigh(e.target.value); setError(null); }} />
+        </label>
+        <button type="submit" className="app-btn app-btn-primary">Save range</button>
+      </div>
+      {error && <p className="app-error" role="alert">{error}</p>}
+    </form>
   );
 }
 

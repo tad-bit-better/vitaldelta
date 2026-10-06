@@ -22,6 +22,9 @@
   --status-none: var(--text-3);
   --font-display: "Bricolage Grotesque Variable", "Bricolage Grotesque", Manrope, system-ui, sans-serif;
   --font-body: "Manrope Variable", Manrope, "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --band: #2c6e4a;
+  --gutter: clamp(16px, 3vw, 40px);
 
   min-height: 100vh;
   display: flex;
@@ -36,10 +39,7 @@
 .app p { margin: 0; }
 .app :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-.app-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 24px; border-bottom: 1px solid var(--line); }
-.app-logo { font-family: var(--font-display); font-weight: 700; font-size: 20px; color: var(--text); text-decoration: none; }
-.app-session { font-size: 14px; color: var(--warn); background: var(--warn-bg); border: 1px solid var(--warn-line); border-radius: 999px; padding: 4px 12px; }
-.app-main { flex: 1; width: 100%; max-width: 1640px; margin: 0 auto; padding: 32px clamp(16px, 3vw, 40px) 48px; box-sizing: border-box; }
+.app-main { flex: 1; width: 100%; max-width: 1280px; margin: 0 auto; padding: 32px var(--gutter) 48px; box-sizing: border-box; }
 .app-footer { padding: 20px 24px; border-top: 1px solid var(--line); font-size: 14px; color: var(--text-3); text-align: center; }
 
 .app-card { display: flex; flex-direction: column; gap: 18px; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: clamp(18px, 4vw, 32px); }
@@ -51,28 +51,9 @@
 .app-row-top { align-items: flex-start; }
 .app-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }
 
-/* Layout: patients sidebar + content; the sidebar becomes a chip row on narrow screens. */
-.app-layout { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 24px; align-items: start; }
-.app-content { min-width: 0; }
-.app-sidebar { position: sticky; top: calc(16px + env(safe-area-inset-top, 0px)); display: flex; flex-direction: column; gap: 12px; padding: 16px; border: 1px solid var(--line); border-radius: 18px; background: var(--card); }
-.app-sidebar-title { margin: 4px 0 0; font-size: 13px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-3); }
-.app-patients { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
-.app-patient { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 10px; border: 1px solid transparent; color: var(--text); text-decoration: none; }
-.app-patient:hover { background: var(--card-alt); }
-.app-patient[aria-current="page"] { background: var(--card-alt); border-color: var(--accent); }
-.app-patient-name { font-weight: 600; overflow-wrap: anywhere; }
-.app-patient-meta { font-size: 13px; color: var(--text-3); }
-@media (max-width: 860px) {
-  .app-layout { grid-template-columns: minmax(0, 1fr); }
-  .app-sidebar { position: static; flex-direction: row; flex-wrap: wrap; align-items: center; padding: 12px; }
-  .app-sidebar-title { display: none; }
-  .app-patients { flex-direction: row; overflow-x: auto; flex: 1 1 100%; order: 2; padding-bottom: 2px; }
-  .app-patient { flex: none; padding: 8px 12px; border-color: var(--line); }
-  .app-sidebar-add { order: 1; }
-}
 
 /* Buttons */
-.app-btn { font: inherit; font-weight: 600; color: var(--text); background: transparent; border: 1px solid var(--line-strong); border-radius: 10px; padding: 10px 16px; cursor: pointer; }
+.app-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; font: inherit; font-weight: 600; color: var(--text); background: transparent; border: 1px solid var(--line-strong); border-radius: 10px; padding: 10px 16px; cursor: pointer; }
 .app-btn:hover:not(:disabled) { border-color: var(--text-3); }
 .app-btn:disabled { opacity: .5; cursor: not-allowed; }
 .app-btn-primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
@@ -160,11 +141,6 @@
 .app-issues { margin: 0; padding-left: 18px; font-size: 14px; color: var(--warn); }
 .app-result-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 
-/* Home */
-.app-reports { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
-.app-report { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--card-alt); }
-.app-report > div:first-child { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.app-report .app-muted { font-size: 14px; overflow-wrap: anywhere; }
 
 /* Status badge: icon + label + colour. */
 .app-status { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; white-space: nowrap; }
@@ -173,49 +149,6 @@
 .app-status-out { color: var(--status-out); }
 .app-status-none { color: var(--status-none); }
 
-/* Tests list (home) */
-.app-tests { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-.app-test { display: grid; grid-template-columns: minmax(0, 2fr) auto minmax(0, 1fr) auto; grid-template-areas: "name spark value status" "meta meta meta meta";
-  align-items: center; gap: 2px 16px; padding: 12px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--card-alt); color: var(--text); text-decoration: none; }
-.app-test:hover { border-color: var(--line-strong); }
-.app-test-name { grid-area: name; font-weight: 600; overflow-wrap: break-word; min-width: 0; }
-.app-test-value { grid-area: value; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.app-test .app-status { grid-area: status; }
-.app-test-meta { grid-area: meta; font-size: 13px; }
-.app-test .app-spark { grid-area: spark; }
-.app-spark { display: block; height: 28px; }
-span.app-spark { width: 88px; }
-.spark-line { fill: none; stroke: var(--text-3); stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }
-@media (max-width: 560px) {
-  .app-test { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name value" "meta status"; gap: 4px 12px; }
-  /* The test page has the full chart; the row keeps the name readable instead. */
-  .app-test .app-spark { display: none; }
-  .app-test .app-status { justify-self: end; }
-}
-
-/* Tests as cards (default): name on top, then the value large with its status, the trend and the details. */
-.app-tests-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
-.app-tests-grid .app-test { height: 100%; box-sizing: border-box; grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-areas: "name name" "value status" "spark spark" "meta meta"; grid-template-rows: auto auto auto 1fr;
-  align-items: baseline; gap: 6px 12px; padding: 16px; }
-.app-tests-grid .app-test-value { text-align: left; font-size: 24px; font-weight: 700; white-space: normal; }
-.app-tests-grid .app-test-value .app-muted { font-size: 15px; font-weight: 600; }
-.app-tests-grid .app-test .app-spark { display: flex; align-items: center; margin-block: 4px; }
-.app-tests-grid span.app-spark { width: auto; }
-.app-tests-grid .app-test .app-status { justify-self: end; }
-.app-tests-grid .app-test-meta { align-self: end; }
-.app-spark-empty { font-size: 13px; color: var(--text-3); }
-
-/* Dashboard highlights */
-.app-highlights { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
-.app-highlight { display: flex; flex-direction: column; gap: 10px; padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--card-alt); }
-.app-changes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
-.app-change { display: flex; gap: 10px; align-items: flex-start; padding: 8px; margin: 0 -8px; border-radius: 10px; color: var(--text); text-decoration: none; }
-.app-change:hover { background: var(--card); }
-.app-change > span:last-child { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.app-change strong { font-weight: 600; }
-.app-change .app-muted { font-size: 13px; }
-.app-change-icon { flex: none; width: 16px; text-align: center; font-size: 14px; line-height: 1.5; }
 
 /* Sort toggle (segmented control) and status groups */
 .app-group-controls { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -223,10 +156,6 @@ span.app-spark { width: 88px; }
 .app-toggle-btn { font: inherit; font-size: 13px; font-weight: 600; color: var(--text-2); background: transparent; border: 0; border-radius: 7px; padding: 6px 12px; cursor: pointer; }
 .app-toggle-btn:hover { color: var(--text); }
 .app-toggle-btn[aria-pressed="true"] { background: var(--line-strong); color: var(--text); }
-.app-test-group { display: flex; flex-direction: column; gap: 8px; }
-.app-test-group + .app-test-group { margin-top: 8px; }
-.app-test-group-head { margin: 0; font-size: 15px; font-weight: 700; }
-.app-test-group-head .app-muted { font-weight: 600; }
 
 /* Test detail */
 .app-back { align-self: flex-start; font-size: 14px; color: var(--text-2); text-decoration: none; }
@@ -266,12 +195,7 @@ span.app-spark { width: 88px; }
 .chart-tooltip-left { transform: translateX(calc(-100% - 12px)); }
 .chart-tooltip strong { font-size: 16px; color: var(--text); }
 
-a.app-btn { display: inline-flex; align-items: center; text-decoration: none; }
-.app-sidebar-data { margin-top: 4px; padding: 10px 12px; border-top: 1px solid var(--line); font-size: 14px; color: var(--text-2); text-decoration: none; }
-.app-sidebar-data:hover, .app-sidebar-data[aria-current="page"] { color: var(--text); }
-@media (max-width: 860px) {
-  .app-sidebar-data { order: 3; flex: 1 1 100%; margin: 0; padding: 4px 2px 0; border: 0; }
-}
+a.app-btn { text-decoration: none; }
 .app-choice-notice { max-width: 680px; margin: 0 auto 16px; }
 
 /* Your data */
@@ -305,9 +229,8 @@ a.app-btn { display: inline-flex; align-items: center; text-decoration: none; }
     min-height: 0; font-size: 11pt;
     print-color-adjust: exact; -webkit-print-color-adjust: exact;
   }
-  .app-bar, .app-sidebar, .app-footer, .summary-actions { display: none !important; }
+  .app-bar, .app-bottom-bar, .app-footer, .summary-actions { display: none !important; }
   .app-main { max-width: none; padding: 0; }
-  .app-layout { display: block; }
   .app-card.summary { border: 0; padding: 0; gap: 12px; border-radius: 0; }
   .summary h1 { font-size: 20pt; }
   .app-table-wrap { overflow: visible; }
@@ -324,8 +247,6 @@ a.app-btn { display: inline-flex; align-items: center; text-decoration: none; }
 .app-skip { position: absolute; left: 12px; top: -48px; z-index: 10; padding: 8px 14px; border-radius: 8px; background: var(--accent); color: var(--on-accent); font-weight: 700; text-decoration: none; }
 .app-skip:focus { top: calc(8px + env(safe-area-inset-top, 0px)); }
 .app main h1:focus { outline: none; }
-.app-bar-end { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-.app-demo { color: var(--accent); background: var(--card-alt); border-color: var(--line-strong); }
 .app-link-btn { font: inherit; color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
 .app-link-btn:disabled { color: var(--text-3); cursor: not-allowed; }
 .app-ios-note { font-size: 14px; color: var(--text); padding: 12px 14px; border: 1px solid var(--warn-line); background: var(--warn-bg); border-radius: 10px; }
@@ -368,48 +289,17 @@ a.app-btn { display: inline-flex; align-items: center; text-decoration: none; }
 .app-results:has(.app-result-compact) { gap: 6px; }
 
 /* Phones: no box around the page (the screen is the frame), smaller type and controls, and
-   shorter labels (.app-wide-only text is hidden; .app-narrow-only controls appear). */
-.app-narrow-only { display: none; }
+   shorter labels (.app-wide-only text is hidden; .app-narrow-only controls appear with their
+   own display). !important so a component's display (e.g. .app-btn's flex) can't undo it. */
+@media (min-width: 561px) { .app-narrow-only { display: none !important; } }
 @media (max-width: 560px) {
-  .app-wide-only { display: none; }
-  .app-narrow-only { display: inline; }
+  .app-wide-only { display: none !important; }
   .app { font-size: 15px; }
   .app h1 { font-size: 24px; }
   .app h2 { font-size: 17px; }
-  .app-bar { flex-wrap: nowrap; padding: 12px 16px; }
-  .app-session { font-size: 13px; padding: 3px 10px; white-space: nowrap; }
   .app-main { padding: 12px 16px 32px; }
-  .app-layout { gap: 16px; }
   .app-content > .app-card, .app-card.app-choice { gap: 16px; padding: 0; border: 0; border-radius: 0; background: transparent; }
 
-  /* Patients: a row of chips, with Add and Your data above. */
-  .app-sidebar { gap: 10px; padding: 0; border: 0; background: transparent; }
-  .app-sidebar-add { padding: 8px 14px; font-size: 14px; }
-  .app-sidebar-data { order: 1; flex: none; margin: 0 0 0 auto; padding: 0; border: 0; font-size: 14px; }
-  .app-patients { order: 2; gap: 6px; }
-  .app-patient { flex-direction: row; align-items: baseline; gap: 8px; padding: 6px 12px; border-radius: 999px; white-space: nowrap; }
-  .app-patient-name { overflow-wrap: normal; font-size: 14px; }
-  .app-patient-meta { font-size: 12px; }
-
-  .app-highlights { gap: 12px; }
-  .app-highlight { gap: 8px; padding: 14px; }
-  .app-changes-collapsed > li:nth-child(n + 5) { display: none; }
-  .app-change { padding: 6px 8px; }
-  .app-change strong { font-size: 14px; }
-  .app-change .app-muted { font-size: 12px; }
-
-  .app-group-head { align-items: center; }
-  .app-toggle-btn { padding: 5px 10px; font-size: 12px; }
-
-  /* Cards on phones: two per row, name, value and status only. */
-  .app-tests-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-  .app-tests-grid .app-test { grid-template-columns: minmax(0, 1fr); grid-template-areas: "name" "value" "status"; gap: 4px; padding: 12px; }
-  .app-tests-grid .app-test .app-spark, .app-tests-grid .app-test-meta { display: none; }
-  .app-tests-grid .app-test-value { font-size: 19px; }
-  .app-tests-grid .app-test-value .app-muted { font-size: 13px; }
-  .app-tests-grid .app-test .app-status { justify-self: start; font-size: 12px; }
-  .app-test { padding: 10px 12px; }
-  .app-test-meta { font-size: 12px; }
 
   /* Review */
   .app-patient-pick, .app-group-check { padding: 12px; }
@@ -428,7 +318,6 @@ a.app-btn { display: inline-flex; align-items: center; text-decoration: none; }
   .app-savebar .app-actions .app-btn-primary { flex: 1; }
 
   .app-latest-value { font-size: 36px; }
-  .app-reports .app-report { padding: 10px 12px; }
 }
 
 /* Doctor summary on a phone screen: each test as a short stack instead of a wide table. */
@@ -444,8 +333,8 @@ a.app-btn { display: inline-flex; align-items: center; text-decoration: none; }
   .summary-table td::before { content: attr(data-label) ": "; color: var(--text-3); }
 }
 
-/* Welcome (no reports yet): one centred column, no sidebar. */
-.app-layout-solo { grid-template-columns: minmax(0, 1fr); max-width: 680px; margin: 0 auto; }
+/* Welcome (no reports yet): one centred column. */
+.app-layout-solo { max-width: 680px; margin: 0 auto; }
 .app-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 16px; }
 .app-steps li { display: flex; align-items: flex-start; gap: 14px; }
 .app-steps li > span:last-child { display: flex; flex-direction: column; gap: 2px; }
@@ -455,4 +344,176 @@ a.app-btn { display: inline-flex; align-items: center; text-decoration: none; }
 @media (max-width: 560px) {
   .app-welcome { padding-top: 8px; }
   .app-welcome-cta { width: 100%; }
+}
+
+/* Top bar: logo and patient switcher on the left; data status and Add on the right.
+   Lined up with the page content (same max width and gutter). */
+.app-bar { position: relative; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px max(var(--gutter), calc((100% - 1280px) / 2 + var(--gutter))); border-bottom: 1px solid var(--line); }
+.app-bar-start, .app-bar-end { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.app-bar-end { flex: none; }
+.app-logo { display: inline-flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 700; font-size: 20px; color: var(--text); text-decoration: none; }
+.app-logo-mark { color: var(--accent); }
+.app-icon { flex: none; }
+.app-pill { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; padding: 6px 12px; border: 1px solid var(--line-strong); border-radius: 999px; color: var(--text-2); text-decoration: none; white-space: nowrap; }
+a.app-pill:hover { color: var(--text); }
+.app-pill-warn { color: var(--warn); border-color: transparent; }
+.app-pill-demo { color: var(--accent); background: var(--card-alt); }
+.app-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--warn); }
+.app-icon-btn { position: relative; display: inline-flex; padding: 8px; border-radius: 10px; color: var(--text-2); }
+.app-icon-btn:hover { color: var(--text); }
+.app-dot-badge { position: absolute; top: 6px; right: 5px; box-shadow: 0 0 0 2px var(--bg); }
+
+/* Dropdown menus (patient switcher, "⋯" actions). */
+.app-menu { position: relative; display: inline-flex; }
+.app-menu-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; min-width: 40px; padding: 0 8px; font: inherit; color: var(--text); background: transparent; border: 1px solid transparent; border-radius: 10px; cursor: pointer; }
+.app-menu-btn:hover, .app-menu-btn[aria-expanded="true"] { background: var(--card-alt); }
+.app-menu-boxed .app-menu-btn { min-width: 44px; min-height: 44px; border-color: var(--line-strong); }
+.app-switcher .app-menu-btn { gap: 8px; padding: 0 14px; border-color: var(--line-strong); font-weight: 700; }
+.app-switcher-name { max-width: 16ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-switcher-count { font-weight: 500; color: var(--text-2); white-space: nowrap; }
+.app-menu-list { position: absolute; top: calc(100% + 6px); z-index: 20; display: flex; flex-direction: column; gap: 2px; min-width: 240px; padding: 6px;
+  background: var(--card); border: 1px solid var(--line-strong); border-radius: 12px; box-shadow: 0 12px 32px rgba(0, 0, 0, .45); }
+.app-menu-list[hidden] { display: none; }
+.app-menu-start { left: 0; }
+.app-menu-end { right: 0; }
+.app-menu-title { padding: 6px 10px 2px; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); }
+.app-menu-item { display: flex; flex-direction: column; gap: 2px; width: 100%; box-sizing: border-box; padding: 9px 10px; font: inherit; font-size: 15px; text-align: left; color: var(--text); background: none; border: 0; border-radius: 8px; text-decoration: none; cursor: pointer; }
+.app-menu-item:hover, .app-menu-item:focus-visible { background: var(--card-alt); }
+.app-menu-item[aria-current="page"] { background: var(--card-alt); box-shadow: inset 3px 0 0 var(--accent); }
+.app-menu-item-name { font-weight: 600; }
+.app-menu-meta { font-size: 13px; color: var(--text-3); }
+.app-menu-danger { color: var(--danger); }
+.app-menu-footer { margin-top: 4px; border-top: 1px solid var(--line); border-radius: 0 0 8px 8px; font-size: 14px; color: var(--text-2); }
+
+/* Pages without the dashboard's own columns stay at a readable width. */
+.app-layout-add .app-content, .app-layout-data .app-content { max-width: 920px; margin: 0 auto; }
+
+/* Patient dashboard */
+.app-mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.app-inline-link { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+.app-visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.app-dash { display: flex; flex-direction: column; gap: 24px; }
+.app-dash-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 16px; }
+.app-dash-title { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.app-dash-title h1 { font-size: clamp(28px, 4vw, 40px); overflow-wrap: anywhere; }
+.app-dash-actions { display: flex; align-items: center; gap: 10px; }
+.app-dash-actions .app-btn { min-height: 44px; box-sizing: border-box; }
+.app-dash-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; align-items: start; }
+.app-dash-main { display: flex; flex-direction: column; gap: 28px; min-width: 0; }
+.app-dash-side { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+
+.app-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 2.2fr); gap: 12px; }
+.app-tile { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 16px 18px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); }
+.app-tile-label { font-size: 14px; color: var(--text-2); }
+.app-tile-value { font-size: 28px; font-weight: 600; line-height: 1; }
+.app-tile-ok .app-tile-value { color: var(--status-ok); }
+.app-tile-out .app-tile-value { color: var(--status-out); }
+.app-tile-since { flex-direction: row; align-items: center; gap: 14px; border-style: dashed; border-color: var(--line-strong); background: transparent; font-size: 14px; color: var(--text-2); }
+.app-tile-since .app-icon { color: var(--accent); }
+
+.app-results-table-wrap { border: 1px solid var(--line); border-radius: 12px; background: var(--card); overflow: hidden; }
+.app-results-table { width: 100%; border-collapse: collapse; font-size: 15px; }
+.app-results-table thead th { padding: 12px 20px; font-size: 13px; font-weight: 500; text-align: left; color: var(--text-2); border-bottom: 1px solid var(--line); white-space: nowrap; }
+.app-results-table thead th:nth-child(1) { width: 22%; }
+.app-results-table thead th:nth-child(2) { width: 14%; }
+.app-results-table thead th:nth-child(3) { width: 26%; }
+.app-results-table thead th:nth-child(4) { width: 15%; }
+.app-results-group th { padding: 22px 20px 10px; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; text-align: left; color: var(--text-2); border-bottom: 1px solid var(--line); }
+.app-results-row > * { padding: 16px 20px; text-align: left; vertical-align: middle; border-bottom: 1px solid var(--line); }
+.app-results-table tbody:last-child .app-results-row:last-child > * { border-bottom: 0; }
+.app-results-row:not(.app-results-row-word) { cursor: pointer; }
+.app-results-row:not(.app-results-row-word):hover { background: var(--card-alt); }
+.app-results-name { font-weight: 500; overflow-wrap: anywhere; }
+.app-results-name a { color: var(--text); text-decoration: none; }
+.app-results-name a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.app-results-value { white-space: nowrap; }
+.app-results-value > .app-mono:first-child { font-size: 16px; font-weight: 600; }
+.app-results-unit { font-size: 12px; color: var(--text-2); }
+.app-results-where { font-size: 14px; }
+.app-results-where-inner { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.app-results-range { font-size: 14px; color: var(--text-2); }
+.app-results-range > .app-mono { color: var(--text); }
+.app-results-change { font-size: 14px; color: var(--text-2); }
+.app-results-sub { display: block; font-size: 12px; color: var(--text-3); }
+
+/* Where the value sits: the range as a band on a track, the value as a dot. */
+.app-bar-track { position: relative; display: block; flex: 1 1 120px; max-width: 220px; height: 6px; border-radius: 6px; background: var(--line); }
+.app-bar-band { position: absolute; top: 0; bottom: 0; border-radius: inherit; background: var(--band); }
+.app-bar-dot { position: absolute; top: 50%; width: 12px; height: 12px; border-radius: 50%; transform: translate(-50%, -50%); background: var(--status-ok); box-shadow: 0 0 0 2px var(--card); }
+.app-bar-dot-near { background: var(--status-near); }
+.app-bar-dot-out { background: var(--status-out); }
+
+.app-side-card { display: flex; flex-direction: column; gap: 12px; padding: 18px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); }
+.app-side-card h2 { font-size: 17px; }
+.app-side-reports { list-style: none; margin: 0; padding: 0; }
+.app-side-reports li { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 0; border-top: 1px solid var(--line); }
+.app-side-report { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.app-side-report .app-muted { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-side-confirm { display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
+.app-side-warn { background: var(--warn-bg); border-color: var(--warn-line); }
+.app-side-warn p { font-size: 14px; color: var(--warn); }
+.app-side-warn .app-inline-link { font-size: 14px; }
+
+.app-add-range { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; padding-top: 14px; border-top: 1px solid var(--line); }
+.app-add-range .app-field { flex: 0 1 160px; }
+
+.app-bottom-bar { display: none; }
+
+@media (max-width: 1024px) {
+  .app-dash-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 760px) {
+  .app-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .app-tile-since { grid-column: 1 / -1; }
+}
+
+/* Phones: icons in the bar, Add at the bottom, and each group of results as a card. */
+@media (max-width: 560px) {
+  .app-bar { padding: 8px 12px 8px 16px; gap: 8px; }
+  .app-bar-start, .app-bar-end { gap: 4px; }
+  .app-logo-text { display: none; }
+  .app-switcher .app-menu-btn { border-color: transparent; padding: 0 8px; font-size: 17px; }
+  .app-pill-demo { padding: 4px 10px; font-size: 13px; }
+
+  .app-main:has(.app-bottom-bar) { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+  .app-bottom-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 4; display: block; padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+    background: var(--bg); border-top: 1px solid var(--line); }
+  .app-bottom-bar .app-btn { width: 100%; padding: 14px; }
+
+  .app-dash { gap: 16px; }
+  .app-dash-head { flex-wrap: nowrap; align-items: flex-start; }
+  .app-dash-title h1 { font-size: 28px; }
+  .app-dash-title p { font-size: 14px; }
+  .app-menu-boxed .app-menu-btn { min-width: 40px; min-height: 40px; }
+  .app-dash-main { gap: 18px; }
+  .app-tiles { gap: 8px; }
+  .app-tile { flex-direction: column-reverse; gap: 4px; padding: 12px 14px; }
+  .app-tile-value { font-size: 22px; }
+  .app-tile-label { font-size: 13px; }
+  .app-tile-since { flex-direction: row; font-size: 13px; padding: 12px 14px; }
+  .app-dash-summary { width: 100%; box-sizing: border-box; padding: 12px; }
+  .app-toggle { align-self: flex-start; }
+
+  .app-results-table-wrap { overflow: visible; border: 0; border-radius: 0; background: transparent; }
+  .app-results-table, .app-results-table tbody, .app-results-table tr, .app-results-table th, .app-results-table td { display: block; }
+  .app-results-table thead { display: none; }
+  .app-results-table tbody + tbody { margin-top: 20px; }
+  .app-results-group th { padding: 0 0 8px; border: 0; }
+  .app-results-table tr.app-results-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name value" "where where" "range change"; align-items: baseline; gap: 8px 12px;
+    padding: 14px 16px; background: var(--card); border: 1px solid var(--line); border-top: 0; }
+  .app-results-row > * { padding: 0; border: 0; }
+  .app-results-group + .app-results-row { border-top: 1px solid var(--line); border-radius: 12px 12px 0 0; }
+  .app-results-row:last-child { border-radius: 0 0 12px 12px; }
+  .app-results-group + .app-results-row:last-child { border-radius: 12px; }
+  .app-results-name { grid-area: name; }
+  .app-results-value { grid-area: value; text-align: right; }
+  .app-results-where { grid-area: where; }
+  .app-results-range { grid-area: range; font-size: 12px; }
+  .app-results-change { grid-area: change; font-size: 12px; text-align: right; }
+  .app-results-change .app-results-sub { display: inline; margin-left: 4px; }
+  .app-bar-track { max-width: none; }
+
+  /* The bar's backup icon says it on phones. */
+  .app-side-warn { display: none; }
 }

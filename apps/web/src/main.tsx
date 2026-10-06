@@ -2,6 +2,9 @@ import { StrictMode } from 'react';
 import { createRoot, hydrateRoot } from 'react-dom/client';
 import '@fontsource-variable/bricolage-grotesque';
 import '@fontsource-variable/manrope';
+// Numbers and ranges on the dashboard. Latin subset only; other characters (µ, ≤) fall back per glyph.
+import '@fontsource/ibm-plex-mono/latin-400.css';
+import '@fontsource/ibm-plex-mono/latin-600.css';
 import App from './App';
 import './index.css';
 

@@ -16,6 +16,7 @@ Done when: live at a public URL with demo mode, linked from the resume.
 - [x] Day 8: Doctor summary with print stylesheet (save as PDF); JSON backup export/import; Delete all data (IndexedDB, caches, service worker)
 - [x] Day 8 (added): Grid/list layout for tests; guideline ranges for 10 tests (HbA1c, fasting glucose, lipids, eGFR, hs-CRP, vitamin D) when a report prints no range
 - [x] Day 9: Demo mode with synthetic reports; PWA + offline; `navigator.storage.persist()`; onboarding (storage choice, shared-computer note, data is per-browser, iPhone install nudge, not-medical-advice); accessibility
+- [x] Dashboard redesign: top bar with patient switcher and backup status, count tiles, results by panel with a range bar, reports and backup nudge beside; phones get a bottom Add bar and cards; add a missing range on the test page
 - [ ] Day 10: README with architecture diagram + demo GIF (mention the CSP privacy guarantee), custom subdomain, LinkedIn post, add to resume
 
 ## Open items
@@ -31,6 +32,7 @@ Things decided or found in conversation that aren't done yet.
 - [ ] MPV and PDW print "%" on the owner's lab report; confirm under "Raw rows" on /dev/rows whether the lab really prints % (then they stay unrecognised) or the parser picked the wrong token
 - [ ] Owner's browser has a "Me" patient created before multi-patient support; rename it or delete and re-add the report
 - [ ] Lab name isn't auto-detected yet; one PDF per upload
+- [ ] A report page (the mockup's "View" next to each report): its results as printed, with edit
 - [x] LOINC copyright notice in the README
 - [ ] Before launch: LOINC notice on an About page in the app
 - [ ] Optional: switch Cloudflare DNS to Vercel's newer recommended records; make the vitaldelta.vercel.app redirect a 308

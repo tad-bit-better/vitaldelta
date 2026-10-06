@@ -1,11 +1,13 @@
 import { createContext, useContext } from 'react';
 import type { Profile, Report, Result } from '../storage/types';
 
-/** Everything saved, loaded once and shared by the sidebar and dashboards. */
+/** Everything saved, loaded once and shared by the top bar and pages. */
 export type AppData = {
   profiles: Profile[];
   reports: Report[];
   results: Result[];
+  /** When a backup file was last downloaded (ISO), or null. */
+  lastBackupAt: string | null;
   /** Re-reads storage after a change (save, delete, rename). */
   reload: () => Promise<void>;
 };

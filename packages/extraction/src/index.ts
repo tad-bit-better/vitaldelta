@@ -15,3 +15,4 @@ export { detectDrift, type Drift, type DriftOptions } from './trends';
 export { detectPatient, nameSimilarity, SAME_PERSON, type DetectedPatient, type Sex } from './patient';
 export { describeStatus, NEAR_FRACTION, percentChange, percentOutside, rangeName, rangeStatus, type RangedValue, type RangeSource, type RangeStatus } from './flags';
 export { effectiveRange, type EffectiveRange } from './guideline';
+export { panelFor, panelOrder, panels, type Panel } from './panels';

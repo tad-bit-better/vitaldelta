@@ -171,15 +171,20 @@ async function addReportWith(pick, beforeReview = async () => {}) {
   await beforeReview();
   while (await click('Looks right')) await sleep(30);
 }
-const layoutButton = (name) =>
-  `[...document.querySelectorAll('[aria-label="Layout"] button')].find((b) => b.innerText.includes(${JSON.stringify(name)}))`;
-const layout = () => evaluate(`document.querySelector('.app-tests')?.classList.contains('app-tests-grid') ? 'grid' : 'list'`);
+// Patients are listed in the top bar's switcher menu (clickable even while it's closed).
+const PATIENTS = `[...document.querySelectorAll('.app-switcher .app-menu-item:not(.app-menu-footer)')]`;
+const patientCount = () => evaluate(`${PATIENTS}.length`);
+const openPatient = (name) => evaluate(`${PATIENTS}.find((a) => a.innerText.includes(${JSON.stringify(name)})).click()`);
+const openTest = (name) => evaluate(`[...document.querySelectorAll('.app-results-name a')].find((a) => a.innerText.startsWith(${JSON.stringify(name)})).click()`);
+const resultRow = (name) => evaluate(`[...document.querySelectorAll('.app-results-row')].find((r) => r.querySelector('.app-results-name').innerText.startsWith(${JSON.stringify(name)}))?.innerText`);
+const groupLabels = () => evaluate(`[...document.querySelectorAll('.app-results-group th')].map((h) => h.textContent)`);
+const viewButton = (name) => `[...document.querySelectorAll('[aria-label="Group results"] button')].find((b) => b.innerText === ${JSON.stringify(name)})`;
 async function shot(name, width = 1280) {
   if (!process.env.SHOTS) return;
   await send('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 2, mobile: width < 600 });
   await sleep(300);
   const { data } = (await send('Page.captureScreenshot', { captureBeyondViewport: true, clip: await evaluate(
-    `(() => { const r = document.querySelector('.app-group:has(.app-tests)').getBoundingClientRect(); return { x: 0, y: r.top + scrollY - 16, width: ${width}, height: r.height + 32, scale: 1 }; })()`) })).result;
+    `(() => { const r = document.querySelector('.app-group:has(.app-results-table)').getBoundingClientRect(); return { x: 0, y: r.top + scrollY - 16, width: ${width}, height: r.height + 32, scale: 1 }; })()`) })).result;
   writeFileSync(join(process.env.SHOTS, `${name}.png`), Buffer.from(data, 'base64'));
   await send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false });
 }
@@ -232,7 +237,7 @@ try {
   await a11y('landing page');
   await goto('/app?demo=1');
   await waitForText('Asha Rao (sample)');
-  check((await evaluate(`document.querySelectorAll('.app-patient').length`)) === 2, 'demo opens with two sample patients');
+  check((await patientCount()) === 2, 'demo opens with two sample patients');
   check((await text('.app-content h1')) === 'Asha Rao (sample)' && (await evaluate('document.title')) === 'Asha Rao (sample) · VitalDelta', 'demo shows the first sample dashboard, with a page title');
   await a11y('dashboard');
   await fullShot('demo');
@@ -243,7 +248,7 @@ try {
   check(await evaluate(`!!document.activeElement?.closest('#review-patient')`), 'after the last row to check, focus moves to the next thing to do (choose the patient)');
   await pickPatient('Asha Rao (sample)');
   await save();
-  check((await text('.app-patient[aria-current="page"]'))?.includes('5 reports'), 'sample report saved in the demo');
+  check((await evaluate(`${PATIENTS}.find((a) => a.getAttribute('aria-current') === 'page')?.textContent`))?.includes('5 reports'), 'sample report saved in the demo');
   check(await evaluate(`document.activeElement === document.querySelector('main h1')`), 'focus moves to the new page’s heading');
   await click('Exit demo');
   await waitForText('Where should your results live?');
@@ -287,7 +292,7 @@ try {
   check(!(await saveEnabled()), 'wrong patient: save blocked until confirmed');
   await pickPatient('New patient');
   await save();
-  check((await evaluate(`document.querySelectorAll('.app-patient').length`)) === 2, 'sidebar lists two patients');
+  check((await patientCount()) === 2, 'patient switcher lists two patients');
 
   await addReport('r3.pdf');
   await pickPatient('Arjun Mehta');
@@ -298,28 +303,29 @@ try {
 
   // ---------- Dashboard and test page ----------
   console.log('\nDashboard');
-  await evaluate(`[...document.querySelectorAll('.app-patient')].find((a) => a.innerText.includes('Arjun')).click()`);
+  await openPatient('Arjun');
   await sleep(400);
-  const groups = await evaluate(`[...document.querySelectorAll('.app-test-group h3')].map((h) => h.innerText)`);
-  check(groups[0]?.startsWith('Outside the range'), 'tests needing attention listed first');
-  check((await text('.app-highlights'))?.includes('Total cholesterol changed by +20%'), 'since-last-report change shown');
-  check((await text('.app-highlights'))?.includes('Falling across your last 3 results'), 'steady trend shown');
-  check((await text('.app-highlights'))?.includes('Urine Protein changed from Negative to Trace'), 'a word result that changed is highlighted');
-  const words = await text('.app-group:has(.app-tests-list) .app-test');
-  check(words?.includes('Urine Protein') && words.includes('Trace') && words.includes('Differs from expected'), 'word results listed under Other results, compared with the expected word');
-  check((await layout()) === 'grid', 'tests shown as cards by default');
-  await shot('grid');
-  await shot('grid-phone', 400);
-  await evaluate(`${layoutButton('List')}.click()`);
+  const panels = await groupLabels();
+  check(panels.length > 1 && !panels.includes('Outside the range') && panels.at(-1) === 'Results in words', 'results grouped by panel by default, results in words last');
+  check((await text('.app-tile-since'))?.includes('changed by 10% or more'), 'since-last-report change shown');
+  check((await text('.app-tile-since'))?.includes('moved the same way 3 or more times'), 'steady trend shown');
+  check((await resultRow('Total cholesterol'))?.includes('+20%'), 'each test shows its change');
+  const word = await resultRow('Urine Protein');
+  check(word?.includes('Trace') && word.includes('Differs from expected') && word.includes('Was Negative'), 'a word result shows the expected word and what it was before');
+  check((await evaluate(`document.querySelectorAll('.app-bar-dot').length`)) > 3, 'values drawn on their range');
+  check((await text('.app-pill'))?.includes('Not backed up') && Boolean(await text('.app-side-warn')), 'no backup yet: the bar and the dashboard say so');
+  await evaluate(`${viewButton('Needs attention first')}.click()`);
   await sleep(200);
-  await shot('list');
-  await evaluate(`[...document.querySelectorAll('.app-test')].find((a) => a.innerText.startsWith('Haemoglobin')).click()`);
+  check((await groupLabels())[0] === 'Outside the range', 'needs attention first puts tests outside the range first');
+  await shot('dashboard');
+  await shot('dashboard-phone', 400);
+  await openTest('Haemoglobin');
   await waitFor(`!!document.querySelector('.chart svg')`, 'trend chart');
   await a11y('test page');
   await evaluate('history.back()');
   await sleep(600);
-  check((await layout()) === 'list', 'list layout kept after opening a test and going back');
-  await evaluate(`[...document.querySelectorAll('.app-test')].find((a) => a.innerText.startsWith('Haemoglobin')).click()`);
+  check((await groupLabels())[0] === 'Outside the range', 'grouping kept after opening a test and going back');
+  await openTest('Haemoglobin');
   await waitFor(`!!document.querySelector('.chart svg')`, 'trend chart');
   check((await evaluate(`document.querySelectorAll('.chart-mark').length`)) === 3, 'chart plots all three results');
   await send('Page.reload');
@@ -329,20 +335,19 @@ try {
   check((await text('.app-content h1')) === 'Arjun Mehta', 'back button returns to the patient');
 
   // A report with no printed range falls back to the guideline range, and says so.
-  await evaluate(`[...document.querySelectorAll('.app-patient')].find((a) => a.innerText.includes('Priya')).click()`);
+  await openPatient('Priya');
   await sleep(400);
-  const card = await evaluate(`[...document.querySelectorAll('.app-test')].find((a) => a.innerText.startsWith('HbA1c'))?.innerText`);
-  check(card?.includes('Above range'), 'HbA1c without a printed range is flagged against the guideline');
-  await evaluate(`[...document.querySelectorAll('.app-test')].find((a) => a.innerText.startsWith('HbA1c')).click()`);
+  check((await resultRow('HbA1c'))?.includes('Above range'), 'HbA1c without a printed range is flagged against the guideline');
+  await openTest('HbA1c');
   await waitFor(`!!document.querySelector('.chart svg')`, 'HbA1c chart');
   const page = await text('.app-content');
   check(page?.includes('Above the guideline range by 7%') && page.includes('< 5.7 · ADA guideline'), 'test page names the guideline and its source');
-  await evaluate(`[...document.querySelectorAll('.app-patient')].find((a) => a.innerText.includes('Arjun')).click()`);
+  await openPatient('Arjun');
   await sleep(400);
 
   // ---------- Doctor summary ----------
   console.log('\nDoctor summary');
-  await clickLink('Doctor summary');
+  await clickLink('Summary for the doctor');
   await waitFor(`!!document.querySelector('.summary-table')`, 'summary table');
   await a11y('doctor summary');
   const captions = await evaluate(`[...document.querySelectorAll('.summary-table caption')].map((c) => c.innerText)`);
@@ -361,7 +366,7 @@ try {
   }
   await send('Emulation.setEmulatedMedia', { media: 'print' });
   check(
-    await evaluate(`getComputedStyle(document.querySelector('.app-sidebar')).display === 'none' && getComputedStyle(document.querySelector('.summary-actions')).display === 'none' && getComputedStyle(document.body).backgroundColor !== 'rgb(6, 17, 12)'`),
+    await evaluate(`getComputedStyle(document.querySelector('.app-bar')).display === 'none' && getComputedStyle(document.querySelector('.summary-actions')).display === 'none' && getComputedStyle(document.body).backgroundColor !== 'rgb(6, 17, 12)'`),
     'print view shows only the summary',
   );
   await send('Emulation.setEmulatedMedia', { media: '' });
@@ -382,6 +387,7 @@ try {
   })();
   const backup = backupFile && JSON.parse(readFileSync(backupFile, 'utf8'));
   check(backup?.profiles.length === 2 && backup.reports.length === 4, 'backup downloads with both patients and all reports');
+  check(await waitFor(`document.querySelector('.app-pill')?.innerText.startsWith('Backed up')`, 'backed-up pill'), 'after a backup, the bar says when it was made');
   await click('Delete all data');
   await click('Delete everything');
   await waitForText('Where should your results live?');
@@ -389,7 +395,7 @@ try {
   check((await evaluate(`indexedDB.databases().then((d) => d.length)`)) === 0, 'delete all removed the database');
   await click('Save on this device');
   await waitForText('Add your first report');
-  check(!(await evaluate(`!!document.querySelector('.app-sidebar')`)), 'welcome screen stands alone (no sidebar before the first report)');
+  check(!(await evaluate(`!!document.querySelector('.app-switcher, .app-bottom-bar')`)), 'welcome screen stands alone (no patient switcher before the first report)');
   await clickLink('Restore a backup');
   await waitForText('Backup file');
   if (backupFile) {
@@ -397,7 +403,7 @@ try {
     await waitForText('Will add 2 patients and 4 reports');
     await click('Restore');
     await waitForText('Restored 2 patients');
-    check((await evaluate(`document.querySelectorAll('.app-patient').length`)) === 2, 'restore brings both patients back');
+    check((await patientCount()) === 2, 'restore brings both patients back');
     await upload(backupFile.slice(work.length + 1));
     await waitForText('All of it is already here.');
     if (process.env.SHOTS) {

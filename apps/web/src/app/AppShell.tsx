@@ -5,17 +5,17 @@ import { createDexieStorage, createMemoryStorage, hasPersistentData, type Profil
 import './app.css';
 import { DataContext, type AppData } from './DataContext';
 import DataPage from './DataPage';
-import Link from './Link';
 import PatientDashboard from './PatientDashboard';
 import Review from './Review';
 import { useInstallPrompt } from './install';
 import { navigate, parseRoute, patientPath, usePath, type Route } from './router';
 import { seriesKey } from './series';
-import Sidebar from './Sidebar';
 import StorageChoice from './StorageChoice';
 import Summary from './Summary';
 import { StorageContext } from './StorageContext';
 import TestDetail from './TestDetail';
+import TopBar from './TopBar';
+import { Icon } from './icons';
 import Upload, { type Extracted } from './Upload';
 import Welcome from './Welcome';
 
@@ -33,7 +33,17 @@ async function openDemo(): Promise<Storage> {
   return storage;
 }
 
-type Loaded = { profiles: Profile[]; reports: Report[]; results: Result[] };
+async function load(storage: Storage): Promise<Loaded> {
+  const [profiles, reports, results, lastBackupAt] = await Promise.all([
+    storage.listProfiles(),
+    storage.listReports(),
+    storage.listResults(),
+    storage.lastBackupAt(),
+  ]);
+  return { profiles, reports, results, lastBackupAt };
+}
+
+type Loaded = { profiles: Profile[]; reports: Report[]; results: Result[]; lastBackupAt: string | null };
 
 function pageTitle(route: Route, loaded: Loaded | null, adding: boolean): string {
   const name = 'profileId' in route ? loaded?.profiles.find((p) => p.id === route.profileId)?.name : undefined;
@@ -105,16 +115,13 @@ export default function AppShell() {
 
   const reload = useCallback(async () => {
     if (!storage) return;
-    const [profiles, reports, results] = await Promise.all([storage.listProfiles(), storage.listReports(), storage.listResults()]);
-    setLoaded({ profiles, reports, results });
+    setLoaded(await load(storage));
   }, [storage]);
 
   useEffect(() => {
     let cancelled = false;
     if (storage) {
-      Promise.all([storage.listProfiles(), storage.listReports(), storage.listResults()]).then(([profiles, reports, results]) => {
-        if (!cancelled) setLoaded({ profiles, reports, results });
-      });
+      void load(storage).then((l) => !cancelled && setLoaded(l));
     }
     return () => {
       cancelled = true;
@@ -172,27 +179,15 @@ export default function AppShell() {
   return (
     <div className="app">
       <a href="#main" className="app-skip">Skip to content</a>
-      <header className="app-bar">
-        <Link to="/app" className="app-logo">VitalDelta</Link>
-        <div className="app-bar-end">
-          {demo ? (
-            <span className="app-session app-demo">
-              Demo<span className="app-wide-only"> with made-up sample data · nothing is saved</span>
-              <span className="app-narrow-only"> ·</span>{' '}
-              <button type="button" className="app-link-btn" onClick={exitDemo}>Exit demo</button>
-            </span>
-          ) : (
-            storage?.mode === 'session' && (
-              <span className="app-session">
-                Just this session<span className="app-wide-only"> · closing this tab erases everything</span>
-              </span>
-            )
-          )}
-          {install && (
-            <button type="button" className="app-btn app-btn-sm" onClick={() => void install()}>Install app</button>
-          )}
-        </div>
-      </header>
+      <TopBar
+        mode={storage?.mode ?? null}
+        data={data}
+        demo={demo}
+        activeId={activeId}
+        showAdd={!!data && data.profiles.length > 0 && route.name !== 'add'}
+        install={install}
+        onExitDemo={exitDemo}
+      />
 
       <main className="app-main" id="main">
         {checking ? null : !storage ? (
@@ -209,9 +204,7 @@ export default function AppShell() {
         ) : !data ? null : (
           <StorageContext.Provider value={storage}>
             <DataContext.Provider value={data}>
-              {/* Before the first report there's nothing for the sidebar to list: the welcome screen stands alone. */}
-              <div className={`app-layout${welcome ? ' app-layout-solo' : ''}`}>
-                {!welcome && <Sidebar activeId={activeId} dataActive={route.name === 'data'} />}
+              <div className={`app-layout app-layout-${route.name}${welcome ? ' app-layout-solo' : ''}`}>
                 <div className="app-content">
                   {route.name === 'add' ? (
                     extracted ? (
@@ -240,6 +233,14 @@ export default function AppShell() {
                   )}
                 </div>
               </div>
+              {/* Phones: Add a report stays in reach at the bottom of the screen. */}
+              {data.profiles.length > 0 && route.name !== 'add' && route.name !== 'summary' && (
+                <div className="app-bottom-bar">
+                  <button type="button" className="app-btn app-btn-primary" onClick={() => navigate('/app/add')}>
+                    <Icon name="plus" /> Add a report
+                  </button>
+                </div>
+              )}
             </DataContext.Provider>
           </StorageContext.Provider>
         )}

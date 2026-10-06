@@ -119,6 +119,9 @@ what happens, why, and what to do.
   harmless and local edits win. Results come only with a report that's new here. If the data
   model changes, bump `BACKUP_VERSION` and teach `parseBackup` to read the old version; old
   backup files live on in people's downloads.
+- **"Not backed up" compares report `createdAt` with `lastBackupAt`** (kept in Dexie's `meta`
+  table, schema version 2), so any report added after the last download makes the backup "out
+  of date". Renames and deletes don't count: they lose nothing. Session mode and the demo never nag.
 - **Backup files are unencrypted health data.** The Your data page says so. Passphrase
   encryption (v1.1) should cover backups too.
 - **Delete all data** (`deleteEverything` in `storage/wipe.ts`) deletes the database, Cache
@@ -228,11 +231,16 @@ what happens, why, and what to do.
 
 ## Phones
 
-- **Below 560px the app drops its outer box** (the screen is the frame), uses smaller type,
-  turns the patient list into a row of chips and shows shorter labels: text in
-  `.app-wide-only` is hidden and `.app-narrow-only` controls (like "Show all") appear. Keep
-  long labels short on phones this way rather than letting buttons wrap.
-- **Phones start with the tests as a list**; cards are two per row with name, value and status.
+- **Below 560px the app drops its outer box** (the screen is the frame), uses smaller type and
+  shorter labels: `.app-wide-only` is hidden and `.app-narrow-only` shows. Both hide with
+  `!important` inside their own media query, because component rules like `.app-btn
+  { display: inline-flex }` would otherwise undo them. Don't add a plain `display` rule to them.
+- **On phones the top bar shrinks to icons**: the patient switcher keeps only the name, backup
+  status becomes an icon with a dot, the rest goes in a "⋯" menu, and "Add a report" is a fixed
+  bar at the bottom (`.app-main:has(.app-bottom-bar)` gets matching bottom padding).
+- **The dashboard's results table turns into one card per group on phones** by making table
+  parts `display: block` and each row a grid. The row selector must beat `.app-results-table td`
+  in specificity (`tr.app-results-row`), or rows silently stay blocks.
 - **Check layouts with `scripts/screenshots.mjs`** (phone and desktop screenshots of every
   screen using the demo data). The e2e test runs at desktop width only.
 
@@ -245,6 +253,10 @@ what happens, why, and what to do.
   so no transform is left on the page afterwards; a leftover transform would break any
   `position: fixed` inside it. Every animation has a `prefers-reduced-motion` fallback (a short
   fade, no movement). The e2e axe check waits for animations to finish before measuring contrast.
+- **Status is never shown by the range bar alone**: out-of-range and near-limit rows add a
+  visible badge; in-range rows add visually hidden text. The bar itself is `aria-hidden`.
+- **e2e: `innerText` applies CSS `text-transform`**, so uppercase group headings read as
+  "LIPIDS". Compare `textContent` instead.
 - **Focusable SVG elements need a role** (chart points use `role="img"` with an `aria-label`).
 
 ## Extraction

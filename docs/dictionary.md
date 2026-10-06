@@ -15,6 +15,10 @@ Extraction never uses per-lab templates; all lab-specific knowledge lives here a
 | `plausibleMin` / `plausibleMax` | Wide bounds; values outside are almost certainly misreads, not diagnoses |
 | `guideline` | Optional. Limits from a clinical guideline, used only when a report prints no range (below) |
 
+Panels (how the dashboard groups tests: "Liver enzymes" within "Liver function test") live in
+`src/panels.ts`, keyed by marker id; a test checks every marker is in exactly one panel, so add
+a new marker there too.
+
 ## Synonym policy
 
 - **Exhaustive up front.** Each marker lists every genuinely different name we know of
