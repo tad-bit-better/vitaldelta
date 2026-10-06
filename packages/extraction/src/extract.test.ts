@@ -50,6 +50,25 @@ describe('lab layouts', () => {
     expect(one('WBC Count', 'SF Cube cell analysis', '10570', '/cmm', '4000 - 10000')).toMatchObject({ markerId: null });
   });
 
+  // Synthetic, like a differential count printed as % and absolute count on one row.
+  it('reads a second result further along the row as its own result', () => {
+    const rows = [
+      row('Neutrophils', '73', '%', '40 - 80', '7716', '/cmm', '2000 - 6700'),
+      { ...row('Lymphocytes', '19', '%', '20 - 40', '2008', '/cmm', '1100 - 3300'), y: 125 },
+    ];
+    expect(extractResults(rows).map((r) => [r.name, r.value, r.unit, r.refLow, r.refHigh])).toEqual([
+      ['Neutrophils', 73, '%', 40, 80],
+      ['Absolute neutrophil count', 7.716, '10^3/µL', 2, 6.7],
+      ['Lymphocytes', 19, '%', 20, 40],
+      ['Absolute lymphocyte count', 2.008, '10^3/µL', 1.1, 3.3],
+    ]);
+    // Both point at the same printed row.
+    const [pct, abs] = extractResults(rows);
+    expect(abs.box).toEqual(pct.box);
+    // A number after the range without a unit isn't a second result.
+    expect(extractResults([row('Haemoglobin', '13.5', 'g/dL', '13 - 17', '2')])).toHaveLength(1);
+  });
+
   it('reads a method column after the range without spoiling the range', () => {
     expect(one('SGPT (ALT)', '36', 'U/L', '13 - 40', 'IFCC without P5P')).toMatchObject({ markerId: '1742-6', refLow: 13, refHigh: 40, method: 'IFCC without P5P', issues: [] });
   });
@@ -155,7 +174,9 @@ describe('extractResults', () => {
 
   it('does not mix up an absolute count with a percentage marker', () => {
     // "Neutrophils" in 10^3/µL is the absolute count, not the % marker.
-    expect(one('Neutrophils', '4.2', '10^3/µL', '2.0 - 7.0')).toMatchObject({ markerId: null, issues: ['unrecognised'] });
+    expect(one('Neutrophils', '4.2', '10^3/µL', '2.0 - 7.0')).toMatchObject({ markerId: '751-8', value: 4.2, issues: [] });
+    // A count unit with no absolute test to fall back to stays unrecognised.
+    expect(one('Haemoglobin', '4.2', '10^3/µL', '2.0 - 7.0')).toMatchObject({ markerId: null, issues: ['unrecognised'] });
     expect(one('Neutrophils', '60', '%', '40 - 80')).toMatchObject({ markerId: '770-8' });
   });
 

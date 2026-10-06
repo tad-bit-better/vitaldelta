@@ -28,6 +28,11 @@ export type ParsedRow = {
   method: string | null;
   /** The whole row text, for review screens and debugging. */
   text: string;
+  /**
+   * A second result printed further along the same row, e.g. a differential count's absolute
+   * value after its percentage ("Neutrophils | 73 | % | 40 - 80 | 7716 | /cmm | 2000 - 6700").
+   */
+  second?: ParsedRow;
 };
 
 type Token = { text: string; startsItem: boolean };
@@ -254,10 +259,12 @@ export function parseRow(printed: Row): ParsedRow | null {
       text: row.text,
     };
   }
+  let rangeEnd = -1;
   for (const { re, kind } of RANGE_PATTERNS) {
     const m = findRange(restText, re);
     if (!m) continue;
     refText = m[0].trim();
+    rangeEnd = (m.index ?? 0) + m[0].length;
     if (kind === 'between') {
       refLow = parseNumber(m[1]);
       refHigh = parseNumber(m[2]);
@@ -268,6 +275,8 @@ export function parseRow(printed: Row): ParsedRow | null {
     }
     break;
   }
+
+  const second = rangeEnd >= 0 ? secondResult(name, restText.slice(rangeEnd)) : undefined;
 
   return {
     name,
@@ -282,5 +291,18 @@ export function parseRow(printed: Row): ParsedRow | null {
     flag,
     method,
     text: row.text,
+    ...(second && { second }),
   };
+}
+
+/**
+ * Reads a second value, unit and range after a row's range, as a result with the same name.
+ * Only with a unit, so stray numbers (page numbers, footnotes) aren't taken for results.
+ */
+function secondResult(name: string, after: string): ParsedRow | undefined {
+  const words = after.trim().split(/\s+/).filter(Boolean);
+  if (!words.some((w) => /\d/.test(w))) return undefined;
+  const items: TextItem[] = [name, ...words].map((text, i) => ({ text, x: i * 50, y: 0, width: 40, height: 10, page: 1 }));
+  const parsed = parseRow({ page: 1, y: 0, items, text: [name, ...words].join(' ') });
+  return parsed?.unit ? parsed : undefined;
 }

@@ -312,6 +312,10 @@ what happens, why, and what to do.
   when every word of the unrecognised name appears in that marker's name or a synonym, the unit
   converts, and it's the closest fit (fewest extra words; a tie suggests nothing). Accepting it
   converts the value and range into the marker's unit; nothing changes until the user says yes.
+- **Two results on one row** ("Neutrophils | 73 | % | 40 - 80 | 7716 | /cmm | 2000 - 6700"): a
+  second value with a unit after the first range becomes its own result with the same name
+  (`second` in `parseRow`). A unit that can't convert to the matched marker tries "Absolute
+  <name>", so the /cmm value lands on the absolute count. Without a unit, a trailing number is ignored.
 - **A flag in its own column before the value** ("TSH | H | 5.2") is the value's flag, not part of the name.
 - **Fuzzy name matching requires short words to match exactly and in order**
   (Vitamin B ≠ Vitamin D, LDL/HDL ≠ HDL/LDL). Short abbreviations never fuzzy-match.

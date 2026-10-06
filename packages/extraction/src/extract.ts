@@ -1,6 +1,6 @@
 import { matchMarker as defaultMatcher, type MarkerMatch } from './match';
 import { isMethod } from './methods';
-import { parseRow, readBands, type Comparator } from './parse';
+import { parseRow, readBands, type Comparator, type ParsedRow } from './parse';
 import { rowBox, type Box, type Row } from './types';
 import { canonicalUnit, convert } from './units';
 
@@ -98,87 +98,97 @@ export function extractResults(rows: Row[], matchMarker: Matcher = defaultMatche
       }
     }
 
-    const issues: Issue[] = [];
-    const unit = parsed.unit ? canonicalUnit(parsed.unit) : null;
-    let match = matchMarker(parsed.name);
-
-    // A recognised unit that can't convert to the marker's unit means a different
-    // quantity with the same name, e.g. absolute neutrophil count vs neutrophil %.
-    if (match && unit && convert(1, unit, match.marker.unit, match.marker.conversions) === null) match = null;
-
-    const base = {
-      printedName: parsed.name,
-      comparator: parsed.comparator,
-      original: { valueText: parsed.valueText, unit: parsed.unit, refText: parsed.refText },
-      labFlag: parsed.flag,
-      page: row.page,
-      box: rowBox(row),
-      method: parsed.method ?? methodLine(rows[index + 1], row),
-    };
-
-    if (!match) {
-      // Keep unknown tests only when the row clearly looks like a result.
-      if (!parsed.unit || !parsed.refText) continue;
-      results.push({
-        ...base,
-        markerId: null,
-        name: parsed.name,
-        value: parsed.value,
-        unit: unit ?? parsed.unit,
-        refLow: parsed.refLow,
-        refHigh: parsed.refHigh,
-        confidence: UNRECOGNISED_CONFIDENCE,
-        issues: parsed.banded ? ['unrecognised', 'banded-range'] : ['unrecognised'],
-      });
-      continue;
+    const shared = { page: row.page, box: rowBox(row), method: parsed.method ?? methodLine(rows[index + 1], row) };
+    for (let p: ParsedRow | undefined = parsed; p; p = p.second) {
+      const result = toResult(p, shared, matchMarker);
+      if (result) results.push(result);
     }
-
-    const { marker } = match;
-    let confidence = 1;
-    if (match.method === 'fuzzy') {
-      issues.push('fuzzy-name');
-      confidence -= (1 - match.similarity) * 2;
-    }
-
-    let value = parsed.value;
-    let resultUnit: string | null = marker.unit;
-    let { refLow, refHigh } = parsed;
-    if (!parsed.unit) {
-      if (marker.unit !== 'ratio') issues.push('missing-unit');
-    } else if (!unit) {
-      issues.push('unknown-unit');
-      resultUnit = parsed.unit;
-    } else {
-      const to = (v: number | null) => (v === null ? null : convert(v, unit, marker.unit, marker.conversions));
-      value = to(value)!;
-      refLow = to(refLow);
-      refHigh = to(refHigh);
-    }
-
-    if (parsed.banded) issues.push('banded-range');
-    else if (!parsed.refText) issues.push(parsed.comparator ? 'bound-only' : 'missing-range');
-    else if (refLow !== null && refHigh !== null && refLow >= refHigh) issues.push('odd-range');
-
-    for (const issue of issues) confidence -= PENALTY[issue] ?? 0;
-    if (resultUnit === marker.unit && (value < marker.plausibleMin || value > marker.plausibleMax)) {
-      issues.push('implausible');
-      confidence = Math.min(confidence, IMPLAUSIBLE_CONFIDENCE);
-    }
-
-    results.push({
-      ...base,
-      markerId: marker.id,
-      name: marker.name,
-      value: round(value),
-      unit: resultUnit,
-      refLow: refLow === null ? null : round(refLow),
-      refHigh: refHigh === null ? null : round(refHigh),
-      confidence: clamp(confidence),
-      issues,
-    });
   }
 
   return dedupe(dropGuidance(results));
+}
+
+/** One parsed result as an extracted one: matched, converted, checked and scored. Null to drop it. */
+function toResult(parsed: ParsedRow, shared: Pick<ExtractedResult, 'page' | 'box' | 'method'>, matchMarker: Matcher): ExtractedResult | null {
+  const issues: Issue[] = [];
+  const unit = parsed.unit ? canonicalUnit(parsed.unit) : null;
+  let match = matchMarker(parsed.name);
+
+  // A recognised unit that can't convert to the marker's unit means a different quantity
+  // with the same name: "Neutrophils 7716 /cmm" is the absolute count, not the percentage.
+  const converts = (m: MarkerMatch | null) => !m || !unit || convert(1, unit, m.marker.unit, m.marker.conversions) !== null;
+  if (!converts(match)) {
+    const absolute = matchMarker(`Absolute ${parsed.name}`);
+    match = absolute && converts(absolute) ? absolute : null;
+  }
+
+  const base = {
+    ...shared,
+    printedName: parsed.name,
+    comparator: parsed.comparator,
+    original: { valueText: parsed.valueText, unit: parsed.unit, refText: parsed.refText },
+    labFlag: parsed.flag,
+  };
+
+  if (!match) {
+    // Keep unknown tests only when the row clearly looks like a result.
+    if (!parsed.unit || !parsed.refText) return null;
+    return {
+      ...base,
+      markerId: null,
+      name: parsed.name,
+      value: parsed.value,
+      unit: unit ?? parsed.unit,
+      refLow: parsed.refLow,
+      refHigh: parsed.refHigh,
+      confidence: UNRECOGNISED_CONFIDENCE,
+      issues: parsed.banded ? ['unrecognised', 'banded-range'] : ['unrecognised'],
+    };
+  }
+
+  const { marker } = match;
+  let confidence = 1;
+  if (match.method === 'fuzzy') {
+    issues.push('fuzzy-name');
+    confidence -= (1 - match.similarity) * 2;
+  }
+
+  let value = parsed.value;
+  let resultUnit: string | null = marker.unit;
+  let { refLow, refHigh } = parsed;
+  if (!parsed.unit) {
+    if (marker.unit !== 'ratio') issues.push('missing-unit');
+  } else if (!unit) {
+    issues.push('unknown-unit');
+    resultUnit = parsed.unit;
+  } else {
+    const to = (v: number | null) => (v === null ? null : convert(v, unit, marker.unit, marker.conversions));
+    value = to(value)!;
+    refLow = to(refLow);
+    refHigh = to(refHigh);
+  }
+
+  if (parsed.banded) issues.push('banded-range');
+  else if (!parsed.refText) issues.push(parsed.comparator ? 'bound-only' : 'missing-range');
+  else if (refLow !== null && refHigh !== null && refLow >= refHigh) issues.push('odd-range');
+
+  for (const issue of issues) confidence -= PENALTY[issue] ?? 0;
+  if (resultUnit === marker.unit && (value < marker.plausibleMin || value > marker.plausibleMax)) {
+    issues.push('implausible');
+    confidence = Math.min(confidence, IMPLAUSIBLE_CONFIDENCE);
+  }
+
+  return {
+    ...base,
+    markerId: marker.id,
+    name: marker.name,
+    value: round(value),
+    unit: resultUnit,
+    refLow: refLow === null ? null : round(refLow),
+    refHigh: refHigh === null ? null : round(refHigh),
+    confidence: clamp(confidence),
+    issues,
+  };
 }
 
 /**
