@@ -71,6 +71,17 @@ export function createMatcher(markers: Marker[] = allMarkers) {
       }
     }
 
+    // "PCV/HAEMATOCRIT": two names for the same test joined by a slash. Only when every part
+    // names the same marker: "HDL/LDL Cholesterol Ratio" and "Urea/Creatinine Ratio" are
+    // ratios of two different tests and must never match either side.
+    const slashParts = printedName.split('/').map((p) => p.trim()).filter(Boolean);
+    if (slashParts.length > 1) {
+      const found = slashParts.map(exact);
+      if (found.every((m): m is Marker => m !== null) && found.every((m) => m.id === found[0].id)) {
+        return { marker: found[0], method: 'exact', similarity: 1 };
+      }
+    }
+
     let best: MarkerMatch | null = null;
     for (const [key, text] of unique) {
       if (key.length < MIN_FUZZY_LENGTH) continue;

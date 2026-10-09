@@ -1,4 +1,5 @@
 import { matchMarker as defaultMatcher, type MarkerMatch } from './match';
+import { markers, UNIT_VARIANTS } from './dictionary';
 import { isMethod } from './methods';
 import { parseRow, readBands, type Comparator, type ParsedRow } from './parse';
 import { rowBox, type Box, type Row } from './types';
@@ -69,6 +70,8 @@ const PENALTY: Partial<Record<Issue, number>> = {
 const UNRECOGNISED_CONFIDENCE = 0.5;
 const IMPLAUSIBLE_CONFIDENCE = 0.1;
 
+const markerById = new Map(markers.map((m) => [m.id, m]));
+
 type Matcher = (name: string) => MarkerMatch | null;
 
 /**
@@ -115,11 +118,13 @@ function toResult(parsed: ParsedRow, shared: Pick<ExtractedResult, 'page' | 'box
   let match = matchMarker(parsed.name);
 
   // A recognised unit that can't convert to the marker's unit means a different quantity
-  // with the same name: "Neutrophils 7716 /cmm" is the absolute count, not the percentage.
+  // with the same name: "PDW" in % is the CV, not the width in fL, and "Neutrophils 7716 /cmm"
+  // is the absolute count, not the percentage.
   const converts = (m: MarkerMatch | null) => !m || !unit || convert(1, unit, m.marker.unit, m.marker.conversions) !== null;
   if (!converts(match)) {
-    const absolute = matchMarker(`Absolute ${parsed.name}`);
-    match = absolute && converts(absolute) ? absolute : null;
+    const variant = unit && markerById.get(UNIT_VARIANTS[match!.marker.id]?.[unit] ?? '');
+    const absolute = variant ? null : matchMarker(`Absolute ${parsed.name}`);
+    match = variant ? { ...match!, marker: variant } : absolute && converts(absolute) ? absolute : null;
   }
 
   const base = {

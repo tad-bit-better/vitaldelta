@@ -110,6 +110,16 @@
       ]
     },
     {
+      "id": "51631-0",
+      "name": "PDW (CV)",
+      "unit": "%",
+      "plausibleMin": 1,
+      "plausibleMax": 60,
+      "synonyms": [
+        "Platelet Distribution Width CV"
+      ]
+    },
+    {
       "id": "51637-7",
       "name": "Plateletcrit",
       "unit": "%",

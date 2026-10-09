@@ -43,6 +43,13 @@ export const markers = data.markers as Marker[];
  * old backups are read under the current code. 1989-3 is 25-OH vitamin D3 only; labs report
  * total D2+D3 (62292-8). 62238-1 is the CKD-EPI 2009 eGFR; labs now use CKD-EPI 2021 (98979-8).
  */
+/**
+ * The same printed name meaning a different test depending on the printed unit:
+ * marker id → canonical unit → the marker that unit belongs to. "PDW" in fL is the
+ * distribution width (32207-3); "PDW" in % is its coefficient of variation (51631-0).
+ */
+export const UNIT_VARIANTS: Readonly<Record<string, Record<string, string>>> = { '32207-3': { '%': '51631-0' } };
+
 export const RENAMED_MARKERS: Readonly<Record<string, string>> = { '1989-3': '62292-8', '62238-1': '98979-8' };
 
 export function currentMarkerId<T extends string | null>(id: T): T {

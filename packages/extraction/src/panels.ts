@@ -16,7 +16,7 @@ export type Panel = {
 export const panels: Panel[] = [
   { id: 'red-cells', label: 'Red blood cells', family: 'Complete blood count', markers: ['718-7', '4544-3', '789-8', '787-2', '785-6', '786-4', '788-0'] },
   { id: 'white-cells', label: 'White blood cells', family: 'Complete blood count', markers: ['6690-2', '770-8', '736-9', '5905-5', '713-8', '706-2', '751-8', '731-0', '742-7', '711-2', '704-7'] },
-  { id: 'platelets', label: 'Platelets', family: 'Complete blood count', markers: ['777-3', '32623-1', '32207-3', '51637-7'] },
+  { id: 'platelets', label: 'Platelets', family: 'Complete blood count', markers: ['777-3', '32623-1', '32207-3', '51631-0', '51637-7'] },
   { id: 'sugar', label: 'Blood sugar', family: 'Blood sugar', markers: ['1558-6', '2345-7', '4548-4'] },
   { id: 'lipids', label: 'Lipids', family: 'Lipid profile', markers: ['2093-3', '2085-9', '2089-1', '2571-8', '13458-5', '43396-1', '9830-1', '11054-4'] },
   { id: 'liver-enzymes', label: 'Liver enzymes', family: 'Liver function test', markers: ['1742-6', '1920-8', '6768-6', '2324-2'] },

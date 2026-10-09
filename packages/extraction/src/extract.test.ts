@@ -180,6 +180,14 @@ describe('extractResults', () => {
     expect(one('Neutrophils', '60', '%', '40 - 80')).toMatchObject({ markerId: '770-8' });
   });
 
+  // Synthetic. "PDW" means a different test depending on the printed unit.
+  it('reads PDW by its unit: fL is the width, % is the CV', () => {
+    expect(one('PDW', '11.2', 'fL', '9.6 - 15.2')).toMatchObject({ markerId: '32207-3', unit: 'fL', issues: [] });
+    expect(one('PDW', '16.5', '%', '11.6 - 18.0')).toMatchObject({ markerId: '51631-0', name: 'PDW (CV)', unit: '%', issues: [] });
+    // MPV has no % form; an MPV printed in % stays unrecognised rather than guessed.
+    expect(one('MPV', '10.2', '%', '9.9 - 12.9')).toMatchObject({ markerId: null, name: 'MPV' });
+  });
+
   it('matches absolute counts printed per 1000/µL', () => {
     expect(one('Absolute Neutrophils', '4.1', '1000/uL', '2 - 7')).toMatchObject({
       markerId: '751-8', value: 4.1, unit: '10^3/µL', confidence: 1,

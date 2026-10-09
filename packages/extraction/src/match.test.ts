@@ -60,6 +60,21 @@ describe('similarity', () => {
   });
 });
 
+describe('slash-joined names', () => {
+  it('matches two names for the same test joined by a slash', () => {
+    expect(id('PCV/HAEMATOCRIT')).toBe('4544-3');
+    expect(id('PCV / HCT')).toBe('4544-3');
+  });
+
+  it('never matches a ratio of two different tests to either side', () => {
+    expect(id('HDL/LDL Cholesterol Ratio')).toBeNull();
+    expect(id('Urea / Creatinine Ratio')).toBeNull();
+    // Whole-name synonyms with slashes still match as themselves.
+    expect(id('A/G Ratio')).toBe('1759-0');
+    expect(id('BUN/Creatinine Ratio')).toBe('3097-3');
+  });
+});
+
 describe('suggestMarker', () => {
   it('suggests the one test whose name contains every printed word', () => {
     expect(suggestMarker('Serum protein', 'g/dL')?.name).toBe('Total protein');

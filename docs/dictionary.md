@@ -140,8 +140,13 @@ Rules:
   (`RENAMED_MARKERS` in `src/dictionary.ts`). Any future code change must go there too.
 - **LDL** stays on 2089-1, which doesn't say how LDL was measured: reports print calculated LDL
   (13457-7) or direct LDL (18262-6) and often don't say which.
-- **PDW** (32207-3) is PDW in fL. Some labs print PDW in %, a different LOINC test (51631-0); it
-  needs choosing the marker by unit, which isn't done yet.
+- **PDW is picked by its printed unit** (`UNIT_VARIANTS` in `src/dictionary.ts`): fL is the
+  width (32207-3), % is its CV (51631-0, name "PDW (CV)"). MPV has no % form, so an MPV printed
+  in % stays unrecognised rather than guessed. Use `UNIT_VARIANTS` for future same-name cases.
+- Two names for one test joined by a slash ("PCV/HAEMATOCRIT") match only when **every** part
+  names the same marker, so "HDL/LDL Cholesterol Ratio" never matches either side.
+- Seen on real reports but not added, pending verified LOINC codes: RDW-SD (fL), total IgE,
+  HDL/LDL cholesterol ratio, urea/creatinine ratio (distinct from BUN/creatinine).
 - eGFR by MDRD (33914-3) or a printed CKD-EPI 2009 still lands on the 2021 marker; the
   equation isn't detected.
 - Unit conversion factors and plausibility bounds still need a review by someone medical.
