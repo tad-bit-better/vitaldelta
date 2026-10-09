@@ -29,7 +29,8 @@ Things decided or found in conversation that aren't done yet.
 - [x] PDW printed in % is now its own test (51631-0), picked by the printed unit
 - [ ] Add markers after verifying their codes: RDW-SD, total IgE, HDL/LDL cholesterol ratio, urea/creatinine ratio
 - [ ] Grow fixtures/ to 10–20 real reports from different labs and confirm their expected values (`pnpm --filter @vitaldelta/extraction expected <n>`), so accuracy is measured, not assumed
-- [ ] Accuracy next steps (in order): cross-check arithmetic relations (indirect bili, globulin, non-HDL, absolute counts) and the printed H/L flag against the parsed range; then header-anchored column parsing
+- [x] Cross-check arithmetic relations (indirect bili, globulin, ratios, non-HDL, VLDL, absolute counts, red-cell indices, iron studies) and the printed H/L flag against the parsed range
+- [ ] Accuracy next step: header-anchored column parsing (read the printed "Test | Result | Unit | Range" header's x-positions instead of relying on token order)
 - [ ] Test on a real iPhone (Add to Home Screen, offline) and Android (Install); automated tests cover desktop Chrome only
 - [ ] Add markers with guideline limits: urine albumin/creatinine ratio (KDIGO < 30 mg/g), 2-hour / post-meal glucose (ADA < 140 mg/dL)
 - [ ] Maybe later: read the lab's own "Desirable / Borderline / High" guidance table as the report's range, instead of dropping it

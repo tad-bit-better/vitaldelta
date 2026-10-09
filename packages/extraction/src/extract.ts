@@ -2,6 +2,7 @@ import { matchMarker as defaultMatcher, type MarkerMatch } from './match';
 import { markers, UNIT_VARIANTS } from './dictionary';
 import { isMethod } from './methods';
 import { parseRow, readBands, type Comparator, type ParsedRow } from './parse';
+import { checkConsistency } from './relations';
 import { rowBox, type Box, type Row } from './types';
 import { canonicalUnit, convert } from './units';
 
@@ -12,6 +13,8 @@ export type Issue =
   | 'missing-unit' // no unit printed; assumed to be the standard unit
   | 'unknown-unit' // unit printed but not recognised; value left as printed
   | 'implausible' // value is outside what's physically possible: likely a misread
+  | 'inconsistent' // disagrees with the report's own arithmetic (see inconsistentWith)
+  | 'flag-mismatch' // the printed H/L flag contradicts the printed range
   | 'missing-range' // no reference range printed
   | 'odd-range' // reference range doesn't make sense (low ≥ high)
   | 'banded-range' // range printed as bands (deficient / sufficient / ...): the normal band was used, or none found
@@ -42,6 +45,8 @@ export type ExtractedResult = {
   box: Box;
   /** Assay method printed with the test ("HPLC", "Hexokinase"), if any. */
   method: string | null;
+  /** For 'inconsistent': the relation the value disagrees with, e.g. "total − direct bilirubin". */
+  inconsistentWith?: string;
 };
 
 /**
@@ -68,6 +73,8 @@ const PENALTY: Partial<Record<Issue, number>> = {
   'bound-only': 0.3,
 };
 const UNRECOGNISED_CONFIDENCE = 0.5;
+// Below REVIEW_THRESHOLD: a value that breaks the report's own arithmetic is always reviewed.
+const INCONSISTENT_CONFIDENCE = 0.7;
 const IMPLAUSIBLE_CONFIDENCE = 0.1;
 
 const markerById = new Map(markers.map((m) => [m.id, m]));
@@ -108,7 +115,7 @@ export function extractResults(rows: Row[], matchMarker: Matcher = defaultMatche
     }
   }
 
-  return dedupe(dropGuidance(results));
+  return checkConsistency(dedupe(dropGuidance(results)), INCONSISTENT_CONFIDENCE);
 }
 
 /** One parsed result as an extracted one: matched, converted, checked and scored. Null to drop it. */

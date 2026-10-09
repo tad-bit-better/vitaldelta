@@ -216,10 +216,18 @@ export function parseRow(printed: Row): ParsedRow | null {
     : null;
   let flag: ParsedRow['flag'] = suffix && suffix !== '*' ? FLAGS[suffix] : (preFlag && FLAGS[preFlag.text.toUpperCase()]) || null;
 
-  // Everything after the value: pull out the flag and unit, the rest holds the range.
+  // A method column at the end ("… | 13 - 40 | IFCC", "High Performance Liquid Chromatography")
+  // is split off first, so none of its words is read as a flag, unit or range.
+  const after = tokens.slice(chosen.i + 1).map((t) => t.text);
+  let methodAt = after.findIndex((_, i) => isMethod(after.slice(i).join(' ')));
+  let method = small.length ? small.map((it) => it.text.trim()).join(' ') : split.method;
+  if (methodAt >= 0) method ??= after.slice(methodAt).join(' ');
+  else methodAt = after.length;
+
+  // Everything else after the value: pull out the flag and unit, the rest holds the range.
   const rest: string[] = [];
   let unit: string | null = null;
-  for (const { text } of tokens.slice(chosen.i + 1)) {
+  for (const text of after.slice(0, methodAt)) {
     const upper = text.toUpperCase();
     if (!flag && FLAGS[upper]) {
       flag = FLAGS[upper];
@@ -228,14 +236,6 @@ export function parseRow(printed: Row): ParsedRow | null {
     } else {
       rest.push(text);
     }
-  }
-
-  // A method column after the value ("… | 13 - 40 | IFCC"): kept as the method, not read as the range.
-  let method = small.length ? small.map((it) => it.text.trim()).join(' ') : split.method;
-  const methodAt = rest.findIndex((_, i) => isMethod(rest.slice(i).join(' ')));
-  if (methodAt >= 0) {
-    method ??= rest.slice(methodAt).join(' ');
-    rest.splice(methodAt);
   }
   const restText = rest.join(' ');
   let refLow: number | null = null;

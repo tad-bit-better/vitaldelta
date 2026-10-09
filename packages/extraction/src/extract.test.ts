@@ -71,6 +71,10 @@ describe('lab layouts', () => {
 
   it('reads a method column after the range without spoiling the range', () => {
     expect(one('SGPT (ALT)', '36', 'U/L', '13 - 40', 'IFCC without P5P')).toMatchObject({ markerId: '1742-6', refLow: 13, refHigh: 40, method: 'IFCC without P5P', issues: [] });
+    // "High" here belongs to the method, never to the flag.
+    expect(one('Haemoglobin', '13.5', 'g/dL', '13.0 - 17.0', 'High Performance Liquid Chromatography')).toMatchObject({
+      labFlag: null, method: 'High Performance Liquid Chromatography', issues: [],
+    });
   });
 
   it('reads a method printed on the line under the test', () => {

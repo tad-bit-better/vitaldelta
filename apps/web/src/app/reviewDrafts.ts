@@ -86,10 +86,12 @@ export function draftRange(d: Pick<Draft, 'refLow' | 'refHigh'>): string {
 }
 
 /** Most important first: the chip on a check card names the first one present. */
-const ISSUE_ORDER: Issue[] = ['implausible', 'unrecognised', 'fuzzy-name', 'unknown-unit', 'missing-unit', 'bound-only', 'duplicate', 'odd-range', 'banded-range', 'missing-range'];
+const ISSUE_ORDER: Issue[] = ['implausible', 'inconsistent', 'flag-mismatch', 'unrecognised', 'fuzzy-name', 'unknown-unit', 'missing-unit', 'bound-only', 'duplicate', 'odd-range', 'banded-range', 'missing-range'];
 
 export const ISSUE_CHIP: Record<Issue, string> = {
   implausible: 'Unusual value',
+  inconsistent: 'Doesn’t add up',
+  'flag-mismatch': 'Flag disagrees',
   unrecognised: 'Name not recognised',
   'fuzzy-name': 'Name matched loosely',
   'unknown-unit': 'Unit not recognised',
@@ -120,6 +122,15 @@ export function issueMessages(d: Draft): string[] {
     );
   } else if (issues.includes('implausible')) {
     out.push(`${value} looks impossible for this test. It was probably misread; check it on the PDF.`);
+  }
+  if (issues.includes('inconsistent') && d.source?.inconsistentWith) {
+    out.push(
+      `This should roughly equal ${d.source.inconsistentWith}, using the other values on this report, but it doesn’t. ` +
+        'One of those values or this one may have been misread; check them on the PDF.',
+    );
+  }
+  if (issues.includes('flag-mismatch')) {
+    out.push(`The report marks this ${d.source?.labFlag === 'high' ? 'high (H)' : 'low (L)'}, but the value sits inside the range that was read. The value or the range may have been misread.`);
   }
   if (issues.includes('unknown-unit')) out.push('The unit wasn’t recognised, so the value is kept as printed.');
   if (issues.includes('missing-unit')) out.push('No unit was printed, so the test’s usual unit is assumed. Check it.');

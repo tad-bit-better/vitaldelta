@@ -323,6 +323,14 @@ what happens, why, and what to do.
 - **A flag in its own column before the value** ("TSH | H | 5.2") is the value's flag, not part of the name.
 - **Fuzzy name matching requires short words to match exactly and in order**
   (Vitamin B ≠ Vitamin D, LDL/HDL ≠ HDL/LDL). Short abbreviations never fuzzy-match.
+- **Results are cross-checked against the report's own arithmetic** (`relations.ts`): indirect
+  bilirubin, globulin, A/G and the other printed ratios, non-HDL, VLDL = TG/5, absolute counts
+  = % × WBC, red-cell indices, TIBC/UIBC/saturation. A value that disagrees (beyond display
+  rounding, per-relation tolerances) gets `inconsistent` and is reviewed; only the derived row
+  is flagged, and a relation is skipped when a test appears twice with different values. A
+  printed H/L flag that contradicts the printed range gets `flag-mismatch` (1% boundary margin).
+  These checks found a real bug: "High Performance Liquid Chromatography" in a trailing method
+  column was being read as an H flag, so the method column is split off before flags and units.
 - **"Neutrophils" etc. are ambiguous** (% or absolute count); the unit decides. A name match
   whose unit can't convert is rejected and kept as unrecognised.
 - **LOINC codes and conversion factors were written from memory** and pass only automated
