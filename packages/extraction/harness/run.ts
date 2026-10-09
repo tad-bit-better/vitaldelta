@@ -11,49 +11,24 @@
  *
  * Optional, all inside fixtures/ (gitignored):
  *   passwords.json               { "report.pdf": "password" }
- *   <file>.expected.json         [{ "markerId": "718-7", "value": 13.5 }]  hand-confirmed,
- *                                values in the marker's standard unit
+ *   <file>.expected.json         hand-confirmed results (make a draft with
+ *                                `pnpm --filter @vitaldelta/extraction expected <n>`); once
+ *                                "confirmed": true, accuracy is scored per field and
+ *                                regressions fail. Drafts are shown but don't gate.
  */
+import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { createRequire } from 'node:module';
-import { basename, dirname, join, resolve } from 'node:path';
-import { getDocument, PasswordException } from 'pdfjs-dist/legacy/build/pdf.mjs';
-import { extractResults, extractWordResults, fromPdfJsItem, groupRows, REVIEW_THRESHOLD, type ExtractedResult, type TextItem } from '../src/index';
+import { basename, join, resolve } from 'node:path';
+import { PasswordException } from 'pdfjs-dist/legacy/build/pdf.mjs';
+import { extractResults, extractWordResults, groupRows, REVIEW_THRESHOLD } from '../src/index';
+import { readPdf } from './pdf';
 import { fileLabel } from './privacy';
+import { parseExpected, scoreFile, type Mismatch } from './score';
 
 const args = process.argv.slice(2);
 const flags = new Set(args.filter((a) => a.startsWith('--')));
 const fixturesDir = resolve(args.find((a) => !a.startsWith('--')) ?? join(import.meta.dirname, '../../../fixtures'));
 const baselinePath = join(fixturesDir, '.harness-baseline.json');
-
-const pdfjsRoot = dirname(createRequire(import.meta.url).resolve('pdfjs-dist/package.json'));
-
-/** Reads a PDF with pdf.js's Node build; positions are converted by the shared fromPdfJsItem. */
-async function readPdf(path: string, password?: string): Promise<TextItem[]> {
-  const task = getDocument({
-    data: new Uint8Array(readFileSync(path)),
-    password,
-    cMapUrl: join(pdfjsRoot, 'cmaps/'),
-    cMapPacked: true,
-    standardFontDataUrl: join(pdfjsRoot, 'standard_fonts/'),
-    verbosity: 0,
-  });
-  try {
-    const doc = await task.promise;
-    const items: TextItem[] = [];
-    for (let n = 1; n <= doc.numPages; n++) {
-      const page = await doc.getPage(n);
-      const viewport = page.getViewport({ scale: 1 });
-      const toViewport = viewport.convertToViewportPoint.bind(viewport);
-      for (const raw of (await page.getTextContent()).items) {
-        if ('str' in raw) items.push(fromPdfJsItem(raw, n, toViewport));
-      }
-    }
-    return items;
-  } finally {
-    await task.destroy();
-  }
-}
 
 type FileStats = {
   file: string;
@@ -66,15 +41,11 @@ type FileStats = {
   words?: number;
   expected?: number;
   correct?: number;
+  /** The expected file hasn't been confirmed (or was made from a different PDF). */
+  draft?: boolean;
+  mismatches?: Mismatch[];
+  extras?: number;
 };
-
-function accuracy(results: ExtractedResult[], expectedPath: string) {
-  const expected: { markerId: string; value: number }[] = JSON.parse(readFileSync(expectedPath, 'utf8'));
-  const correct = expected.filter((e) =>
-    results.some((r) => r.markerId === e.markerId && Math.abs(r.value - e.value) <= Math.abs(e.value) * 0.005),
-  ).length;
-  return { expected: expected.length, correct };
-}
 
 async function main() {
   if (!existsSync(fixturesDir)) {
@@ -101,7 +72,9 @@ async function main() {
 
   const stats: FileStats[] = [];
   for (const [index, file] of files.entries()) {
-    const label = fileLabel(index, new Uint8Array(readFileSync(join(fixturesDir, file))), file, flags.has('--names'));
+    const bytes = new Uint8Array(readFileSync(join(fixturesDir, file)));
+    const label = fileLabel(index, bytes, file, flags.has('--names'));
+    const fingerprint = createHash('sha256').update(bytes).digest('hex').slice(0, 8);
     const s: FileStats = { file: label, results: 0, recognised: 0, unrecognised: 0, needsReview: 0 };
     stats.push(s);
     try {
@@ -112,16 +85,30 @@ async function main() {
       }
       const rows = groupRows(items);
       const results = extractResults(rows);
-      s.words = extractWordResults(rows).length;
+      const words = extractWordResults(rows);
+      s.words = words.length;
       s.results = results.length;
       s.recognised = results.filter((r) => r.markerId).length;
       s.unrecognised = s.results - s.recognised;
       s.needsReview = results.filter((r) => r.confidence < REVIEW_THRESHOLD).length;
       const expectedPath = join(fixturesDir, `${basename(file, '.pdf')}.expected.json`);
-      if (existsSync(expectedPath)) Object.assign(s, accuracy(results, expectedPath));
+      if (existsSync(expectedPath)) {
+        const expected = parseExpected(readFileSync(expectedPath, 'utf8'));
+        const stale = expected.fingerprint !== undefined && expected.fingerprint !== fingerprint;
+        if (stale) console.warn(`  ${label}: the expected file was made from a different PDF; treating it as a draft`);
+        const score = scoreFile(expected, results, words);
+        Object.assign(s, score, { draft: !expected.confirmed || stale });
+      }
       if (flags.has('--verbose') && s.unrecognised) {
         const names = results.filter((r) => !r.markerId).map((r) => r.printedName);
         console.log(`  ${label} unrecognised: ${names.join(' | ')}`);
+      }
+      // Test names and which field differed only, never values.
+      if (flags.has('--verbose') && s.mismatches?.length) {
+        console.log(`  ${label} wrong: ${s.mismatches.map((m) => `${m.name} (${m.problem})`).join(' · ')}`);
+      }
+      if (flags.has('--verbose') && !s.draft && s.extras) {
+        console.log(`  ${label}: ${s.extras} extracted result(s) not in the expected file`);
       }
     } catch (err) {
       s.error = err instanceof PasswordException ? 'password needed (add to passwords.json)' : String(err);
@@ -138,20 +125,24 @@ async function main() {
       'needs review': s.error ? '' : s.needsReview,
       'match rate': s.error ? '' : pct(s.recognised, s.results),
       'in words': s.error ? '' : s.words,
-      accuracy: s.expected ? `${s.correct}/${s.expected}` : '',
+      accuracy: s.expected ? `${s.correct}/${s.expected}${s.draft ? ' (draft)' : ''}` : '',
     })),
   );
 
   const ok = stats.filter((s) => !s.error);
-  const sum = (key: 'results' | 'recognised' | 'expected' | 'correct') => ok.reduce((n, s) => n + (s[key] ?? 0), 0);
+  // Accuracy counts only confirmed expected files; drafts are shown but don't gate anything.
+  const confirmed = ok.filter((s) => s.expected && !s.draft);
+  const drafts = ok.filter((s) => s.expected && s.draft).length;
+  const sum = (list: FileStats[], key: 'results' | 'recognised' | 'expected' | 'correct') => list.reduce((n, s) => n + (s[key] ?? 0), 0);
   const totals = {
-    matchRate: sum('results') ? sum('recognised') / sum('results') : 0,
-    accuracy: sum('expected') ? sum('correct') / sum('expected') : null,
+    matchRate: sum(ok, 'results') ? sum(ok, 'recognised') / sum(ok, 'results') : 0,
+    accuracy: sum(confirmed, 'expected') ? sum(confirmed, 'correct') / sum(confirmed, 'expected') : null,
     files: ok.length,
   };
   console.log(
-    `Match rate ${pct(sum('recognised'), sum('results'))} across ${ok.length} file(s)` +
-      (totals.accuracy === null ? '' : `, accuracy ${pct(sum('correct'), sum('expected'))}`) +
+    `Match rate ${pct(sum(ok, 'recognised'), sum(ok, 'results'))} across ${ok.length} file(s)` +
+      (totals.accuracy === null ? '' : `, accuracy ${pct(sum(confirmed, 'correct'), sum(confirmed, 'expected'))} on ${confirmed.length} confirmed`) +
+      (drafts ? `, ${drafts} draft expected file(s) to confirm` : '') +
       (stats.length > ok.length ? `, ${stats.length - ok.length} skipped` : ''),
   );
 

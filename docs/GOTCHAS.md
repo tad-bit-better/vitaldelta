@@ -28,6 +28,10 @@ what happens, why, and what to do.
 - **pdf.js's image-decoding WASM isn't shipped.** Text extraction doesn't need it, and it
   would require `'wasm-unsafe-eval'` in the CSP. If OCR or image decoding is ever added,
   that's a CSP decision.
+- **`.expected.json` files in fixtures/ hold real values** and are gitignored with the PDFs.
+  The harness and the `expected` tool print only counts, test names and which field differed,
+  never values. Scoring rules live in `harness/score.ts`, unit-tested with synthetic data; an
+  expected file whose `fingerprint` no longer matches its PDF is treated as a draft.
 - **The web app uses pdf.js's legacy build** (`pdfjs-dist/legacy/build/...`, like the harness).
   The modern build relies on very new JavaScript (`Uint8Array.prototype.toHex`, `Math.sumPrecise`,
   `Map.prototype.getOrInsert`) that older iOS Safari lacks; some PDFs (ones whose fonts reach those

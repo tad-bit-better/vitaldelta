@@ -74,7 +74,9 @@ Native mobile (React Native) is v2 and will reuse `packages/extraction`.
 ## Conventions
 - Sample report PDFs live in `fixtures/` and are **gitignored** (real personal data)
 - Demo data in `apps/web/src/demo/` is synthetic only — never derived from real reports
-- `pnpm harness` reports the extraction match rate across fixtures; don't let it regress
+- `pnpm harness` reports the extraction match rate across fixtures, and accuracy against
+  hand-confirmed `.expected.json` files (draft one per fixture with `pnpm --filter
+  @vitaldelta/extraction expected <n>`); don't let either regress
 - Keep components small; no state library until it's clearly needed
 
 ## Gotchas

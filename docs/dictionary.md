@@ -51,8 +51,12 @@ vocabulary in `src/methods.ts`, and stored as the result's method. Add a method 
    property, specimen and unit through the NLM Clinical Tables LOINC API, and status through
    the HL7 FHIR terminology server (tx.fhir.org). loinc.org itself blocks automated access. Two
    codes were corrected (below). Re-check any new code the same way.
-3. **Real reports** (planned, `pnpm harness`): hand-confirmed expected values per fixture,
-   kept out of git; match rate and accuracy must not regress.
+3. **Real reports** (`pnpm harness`): per fixture, a hand-confirmed `<file>.expected.json`
+   (draft it with `pnpm --filter @vitaldelta/extraction expected <n>`, check it against the
+   PDF, set `"confirmed": true`). The harness scores each row per field (found, value, unit,
+   range; words by text) and fails when confirmed accuracy regresses. Drafts are shown but
+   don't gate. Expected files hold real values, so they live in fixtures/ (gitignored) and
+   output only ever prints test names and which field differed.
 4. **Human review**: PR checklist above; a one-time review of bounds and conversions by
    someone with a medical background before launch.
 5. **In the app**: users confirm every value before saving; low-confidence rows are highlighted.

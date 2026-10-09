@@ -27,6 +27,8 @@ Things decided or found in conversation that aren't done yet.
 - [x] Verify the 71 LOINC codes (NLM LOINC API + FHIR terminology server, 2026-10-09): vitamin D → 62292-8, eGFR → 98979-8, old codes mapped
 - [x] Verify the 10 guideline ranges against their sources (values all correct; labels now carry the year; HDL falls back to ≥ 40 without a sex)
 - [ ] PDW printed in % is a different LOINC test (51631-0): choose the marker by unit
+- [ ] Grow fixtures/ to 10–20 real reports from different labs and confirm their expected values (`pnpm --filter @vitaldelta/extraction expected <n>`), so accuracy is measured, not assumed
+- [ ] Accuracy next steps (in order): cross-check arithmetic relations (indirect bili, globulin, non-HDL, absolute counts) and the printed H/L flag against the parsed range; then header-anchored column parsing
 - [ ] Test on a real iPhone (Add to Home Screen, offline) and Android (Install); automated tests cover desktop Chrome only
 - [ ] Add markers with guideline limits: urine albumin/creatinine ratio (KDIGO < 30 mg/g), 2-hour / post-meal glucose (ADA < 140 mg/dL)
 - [ ] Maybe later: read the lab's own "Desirable / Borderline / High" guidance table as the report's range, instead of dropping it
