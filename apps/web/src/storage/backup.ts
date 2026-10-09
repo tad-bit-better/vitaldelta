@@ -1,3 +1,4 @@
+import { currentMarkerId } from '@vitaldelta/extraction';
 import type { Profile, Report, Result, Storage } from './types';
 
 /**
@@ -101,6 +102,8 @@ export function parseBackup(text: string): Backup {
     if (r.value === null && textValue === null) throw new BackupError('The backup has a result with neither a value nor a text result.');
     return {
       ...r,
+      // Older backups may use a LOINC code that has since been corrected.
+      markerId: currentMarkerId(r.markerId),
       textValue,
       expectedText: typeof r.expectedText === 'string' ? r.expectedText : null,
       method: typeof r.method === 'string' ? r.method : null,

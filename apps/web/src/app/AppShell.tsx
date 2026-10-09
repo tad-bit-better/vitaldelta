@@ -4,11 +4,13 @@ import { samplePdfFile } from '../demo/samplePdf';
 import { createDexieStorage, createMemoryStorage, hasPersistentData, type Profile, type Report, type Result, type Storage, type StorageMode } from '../storage';
 import './app.css';
 import { DataContext, type AppData } from './DataContext';
+import About from './About';
 import DataPage from './DataPage';
 import PatientDashboard from './PatientDashboard';
 import Review from './Review';
 import { useInstallPrompt } from './install';
-import { navigate, parseRoute, patientPath, usePath, type Route } from './router';
+import Link from './Link';
+import { ABOUT_PATH, navigate, parseRoute, patientPath, usePath, type Route } from './router';
 import { seriesKey } from './series';
 import StorageChoice from './StorageChoice';
 import Summary from './Summary';
@@ -52,6 +54,8 @@ function pageTitle(route: Route, loaded: Loaded | null, adding: boolean): string
       return adding ? 'Check results' : 'Add a report';
     case 'data':
       return 'Your data';
+    case 'about':
+      return 'About';
     case 'patient':
       return name ?? 'Patient';
     case 'test':
@@ -190,7 +194,14 @@ export default function AppShell() {
       />
 
       <main className="app-main" id="main">
-        {checking ? null : !storage ? (
+        {route.name === 'about' && !storage ? (
+          // Readable before choosing where data lives.
+          <div className="app-layout app-layout-data">
+            <div className="app-content">
+              <About />
+            </div>
+          </div>
+        ) : checking ? null : !storage ? (
           <>
             {notice && <p className="app-notice app-choice-notice" role="status">{notice}</p>}
             <StorageChoice
@@ -222,6 +233,8 @@ export default function AppShell() {
                         sample={demo ? samplePdfFile : undefined}
                       />
                     )
+                  ) : route.name === 'about' ? (
+                    <About />
                   ) : route.name === 'data' ? (
                     <DataPage onDeletedAll={() => reset(demo ? null : 'All data deleted.')} />
                   ) : route.name === 'summary' ? (
@@ -250,7 +263,7 @@ export default function AppShell() {
 
       <footer className="app-footer">
         Not medical advice. VitalDelta shows what your reports say and how values changed; talk to your doctor about what
-        they mean.
+        they mean. <Link to={ABOUT_PATH} className="app-footer-link">About and licences</Link>
       </footer>
     </div>
   );

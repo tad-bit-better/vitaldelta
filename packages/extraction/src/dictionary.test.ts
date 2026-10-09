@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { markers } from './dictionary';
+import { currentMarkerId, markers, RENAMED_MARKERS } from './dictionary';
 import { nameKey } from './names';
 import { canonicalUnit, convert } from './units';
 
@@ -13,6 +13,18 @@ function loincCheckDigit(body: string): number {
 }
 
 describe('marker dictionary', () => {
+  it('reads codes saved before a code changed under the current one', () => {
+    expect(currentMarkerId('1989-3')).toBe('62292-8');
+    expect(currentMarkerId('62238-1')).toBe('98979-8');
+    expect(currentMarkerId('718-7')).toBe('718-7');
+    expect(currentMarkerId(null)).toBeNull();
+    // New codes exist; old ones are gone from the dictionary.
+    for (const [old, now] of Object.entries(RENAMED_MARKERS)) {
+      expect(markers.some((m) => m.id === now), now).toBe(true);
+      expect(markers.some((m) => m.id === old), old).toBe(false);
+    }
+  });
+
   it('has well-formed guideline ranges, only where listed in docs/dictionary.md', () => {
     const withGuideline = markers.filter((m) => m.guideline).map((m) => m.name);
     expect(withGuideline.sort()).toEqual(
@@ -33,7 +45,10 @@ describe('marker dictionary', () => {
         }
         if (b.low !== undefined && b.high !== undefined) expect(b.low < b.high, m.name).toBe(true);
       }
-      if (g.bySex) expect(g.low === undefined && g.high === undefined, `${m.name}: limits both by sex and overall`).toBe(true);
+      // Every source names its guideline and year, e.g. "ADA 2026" (NCEP ATP III is 2001 by name).
+      for (const source of [g.source, g.bySex?.male.source, g.bySex?.female.source].filter(Boolean)) {
+        expect(/\b(19|20)\d\d\b|ATP III/.test(source!), `${m.name}: ${source}`).toBe(true);
+      }
     }
   });
 

@@ -24,8 +24,9 @@ Done when: live at a public URL with demo mode, linked from the resume.
 Things decided or found in conversation that aren't done yet.
 - [x] README with architecture diagram, screenshots (docs/images, from the demo data via apps/web/scripts/screenshots.mjs) and the CSP privacy guarantee
 - [ ] Day 10 still to do: demo GIF for the README, LinkedIn post, resume
-- [ ] Verify the 71 LOINC codes against loinc.org (written from memory; only check digits are tested). In particular 1989-3 (Vitamin D: D3 only or total?)
-- [ ] Verify the 10 guideline ranges (table in docs/dictionary.md) against the current ADA, NCEP ATP III, NLA, KDIGO, AHA/CDC and IOM documents, as part of the medical review
+- [x] Verify the 71 LOINC codes (NLM LOINC API + FHIR terminology server, 2026-10-09): vitamin D → 62292-8, eGFR → 98979-8, old codes mapped
+- [x] Verify the 10 guideline ranges against their sources (values all correct; labels now carry the year; HDL falls back to ≥ 40 without a sex)
+- [ ] PDW printed in % is a different LOINC test (51631-0): choose the marker by unit
 - [ ] Test on a real iPhone (Add to Home Screen, offline) and Android (Install); automated tests cover desktop Chrome only
 - [ ] Add markers with guideline limits: urine albumin/creatinine ratio (KDIGO < 30 mg/g), 2-hour / post-meal glucose (ADA < 140 mg/dL)
 - [ ] Maybe later: read the lab's own "Desirable / Borderline / High" guidance table as the report's range, instead of dropping it
@@ -35,7 +36,7 @@ Things decided or found in conversation that aren't done yet.
 - [ ] Lab name isn't auto-detected yet; one PDF per upload
 - [ ] A report page (the mockup's "View" next to each report): its results as printed, with edit
 - [x] LOINC copyright notice in the README
-- [ ] Before launch: LOINC notice on an About page in the app
+- [x] About page (/app/about) with the LOINC notice, privacy, sources and licences
 - [ ] Optional: switch Cloudflare DNS to Vercel's newer recommended records; make the vitaldelta.vercel.app redirect a 308
 
 ## After launch

@@ -349,7 +349,7 @@
       "plausibleMin": 10,
       "plausibleMax": 1500,
       "guideline": {
-        "source": "ADA",
+        "source": "ADA 2026",
         "low": 70,
         "high": 100,
         "highStrict": true
@@ -398,7 +398,7 @@
       "plausibleMin": 2,
       "plausibleMax": 20,
       "guideline": {
-        "source": "ADA",
+        "source": "ADA 2026",
         "high": 5.7,
         "highStrict": true
       },
@@ -448,12 +448,14 @@
       "plausibleMax": 200,
       "guideline": {
         "source": "NCEP ATP III",
+        "low": 40,
         "bySex": {
           "male": {
             "low": 40
           },
           "female": {
-            "low": 50
+            "low": 50,
+            "source": "ATP III metabolic syndrome"
           }
         }
       },
@@ -546,7 +548,7 @@
       "plausibleMin": 10,
       "plausibleMax": 1000,
       "guideline": {
-        "source": "NLA",
+        "source": "NLA 2015",
         "high": 130,
         "highStrict": true
       },
@@ -637,13 +639,13 @@
       ]
     },
     {
-      "id": "62238-1",
+      "id": "98979-8",
       "name": "eGFR",
       "unit": "mL/min/1.73m²",
       "plausibleMin": 1,
       "plausibleMax": 200,
       "guideline": {
-        "source": "KDIGO",
+        "source": "KDIGO 2024",
         "low": 60
       },
       "synonyms": [
@@ -993,7 +995,7 @@
       ]
     },
     {
-      "id": "1989-3",
+      "id": "62292-8",
       "name": "Vitamin D (25-OH)",
       "unit": "ng/mL",
       "conversions": {
@@ -1002,7 +1004,7 @@
       "plausibleMin": 1,
       "plausibleMax": 200,
       "guideline": {
-        "source": "IOM",
+        "source": "IOM 2011",
         "low": 20
       },
       "synonyms": [
@@ -1115,7 +1117,7 @@
       "plausibleMin": 0,
       "plausibleMax": 50,
       "guideline": {
-        "source": "AHA/CDC",
+        "source": "AHA/CDC 2003",
         "high": 3
       },
       "synonyms": [

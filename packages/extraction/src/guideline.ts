@@ -19,8 +19,8 @@ type ResultRange = { markerId: string | null; unit: string | null; refLow: numbe
 
 /**
  * The report's own range when it printed one (always preferred); otherwise the marker's
- * guideline range, if it has one, the value is in the marker's standard unit, and (for
- * sex-specific limits) the patient's sex is known.
+ * guideline range, if it has one and the value is in the marker's standard unit. Sex-specific
+ * limits apply when the patient's sex is known, otherwise the guideline's general limit.
  */
 export function effectiveRange(result: ResultRange, sex: Sex | null): EffectiveRange {
   const fromReport: EffectiveRange = {
@@ -37,16 +37,14 @@ export function effectiveRange(result: ResultRange, sex: Sex | null): EffectiveR
   if (!marker || !guideline || result.unit !== marker.unit) return fromReport;
 
   let bounds: GuidelineBounds = guideline;
-  if (guideline.bySex) {
-    if (!sex) return fromReport;
-    bounds = guideline.bySex[sex];
-  }
+  if (guideline.bySex && sex) bounds = guideline.bySex[sex];
+  if (bounds.low === undefined && bounds.high === undefined) return fromReport;
   return {
     refLow: bounds.low ?? null,
     refHigh: bounds.high ?? null,
     refLowStrict: Boolean(bounds.lowStrict),
     refHighStrict: Boolean(bounds.highStrict),
     rangeSource: 'guideline',
-    guidelineSource: guideline.source,
+    guidelineSource: bounds.source ?? guideline.source,
   };
 }

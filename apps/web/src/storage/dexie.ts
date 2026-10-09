@@ -1,3 +1,4 @@
+import { currentMarkerId } from '@vitaldelta/extraction';
 import Dexie, { type EntityTable } from 'dexie';
 import type { NewProfile, NewReport, NewResult, Profile, Report, Result, Storage } from './types';
 
@@ -28,8 +29,17 @@ export function hasPersistentData(): Promise<boolean> {
 
 /** Profiles saved before multi-patient support lack these fields. */
 const normalise = (p: Profile): Profile => ({ ...p, aliases: p.aliases ?? [], sex: p.sex ?? null });
-/** Results saved before word results existed lack these fields. */
-const normaliseResult = (r: Result): Result => ({ ...r, textValue: r.textValue ?? null, expectedText: r.expectedText ?? null, method: r.method ?? null });
+/**
+ * Results saved before word results and methods existed lack those fields; results saved under
+ * a LOINC code that has since been corrected are read under the current one (not rewritten).
+ */
+const normaliseResult = (r: Result): Result => ({
+  ...r,
+  markerId: currentMarkerId(r.markerId),
+  textValue: r.textValue ?? null,
+  expectedText: r.expectedText ?? null,
+  method: r.method ?? null,
+});
 
 const byCollectedDesc = (a: Report, b: Report) => b.collectedAt.localeCompare(a.collectedAt) || b.createdAt.localeCompare(a.createdAt);
 

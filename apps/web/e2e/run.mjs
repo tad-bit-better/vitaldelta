@@ -236,6 +236,9 @@ try {
 
   // ---------- Demo ----------
   console.log('\nDemo');
+  await goto('/app/about');
+  check(await waitForText('This material contains content from LOINC'), 'About page shows the LOINC notice, before choosing where data lives');
+  await a11y('about page');
   await goto('/');
   await a11y('landing page');
   await goto('/app?demo=1');
@@ -354,7 +357,7 @@ try {
   await openTest('HbA1c');
   await waitFor(`!!document.querySelector('.chart svg')`, 'HbA1c chart');
   const page = await text('.app-content');
-  check(page?.includes('Above the guideline range by 7%') && page.includes('< 5.7 · ADA guideline'), 'test page names the guideline and its source');
+  check(page?.includes('Above the guideline range by 7%') && page.includes('< 5.7 · ADA 2026 guideline'), 'test page names the guideline and its source');
   await openPatient('Arjun');
   await sleep(400);
 

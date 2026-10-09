@@ -22,15 +22,29 @@ export type Marker = {
   guideline?: Guideline;
 };
 
-/** Limits in the marker's `unit`. Strict bounds exclude the limit itself ("< 5.7"). */
-export type GuidelineBounds = { low?: number; high?: number; lowStrict?: boolean; highStrict?: boolean };
+/**
+ * Limits in the marker's `unit`. Strict bounds exclude the limit itself ("< 5.7"). `source`
+ * overrides the guideline's citation for sex-specific limits from a different part of it.
+ */
+export type GuidelineBounds = { low?: number; high?: number; lowStrict?: boolean; highStrict?: boolean; source?: string };
 
 export type Guideline = GuidelineBounds & {
   /** Short citation shown next to the range, e.g. "ADA 2024". */
   source: string;
-  /** Sex-specific limits; without a known sex, no guideline range is used. */
+  /** Sex-specific limits; without a known sex, the top-level limits apply (if there are any). */
   bySex?: Record<Sex, GuidelineBounds>;
 };
 
 // JSON type inference widens optional keys, so assert the shape; dictionary.test.ts checks it.
 export const markers = data.markers as Marker[];
+
+/**
+ * Codes changed after results were saved under the old ones (old → new), so stored data and
+ * old backups are read under the current code. 1989-3 is 25-OH vitamin D3 only; labs report
+ * total D2+D3 (62292-8). 62238-1 is the CKD-EPI 2009 eGFR; labs now use CKD-EPI 2021 (98979-8).
+ */
+export const RENAMED_MARKERS: Readonly<Record<string, string>> = { '1989-3': '62292-8', '62238-1': '98979-8' };
+
+export function currentMarkerId<T extends string | null>(id: T): T {
+  return (id && RENAMED_MARKERS[id] ? RENAMED_MARKERS[id] : id) as T;
+}

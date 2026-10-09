@@ -49,10 +49,10 @@ describe('buildSeries', () => {
     ], 'female');
     const [hba1c, hdl] = series;
     expect(hba1c.points.map((p) => [p.rangeSource, p.status])).toEqual([['guideline', 'above'], ['report', 'in-range']]);
-    expect(hba1c.points[0]).toMatchObject({ refHigh: 5.7, refHighStrict: true, guidelineSource: 'ADA' });
+    expect(hba1c.points[0]).toMatchObject({ refHigh: 5.7, refHighStrict: true, guidelineSource: 'ADA 2026' });
     expect(hdl.latest).toMatchObject({ refLow: 50, status: 'below', rangeSource: 'guideline' });
-    // Without a known sex, sex-specific limits aren't guessed.
-    expect(buildSeries(reports, [result('c', { markerId: '2085-9', unit: 'mg/dL', refLow: null, refHigh: null })])[0].latest.status).toBe('no-range');
+    // Without a known sex, the general limit (ATP III's < 40 for everyone), not the women's 50.
+    expect(buildSeries(reports, [result('c', { markerId: '2085-9', unit: 'mg/dL', value: 45, refLow: null, refHigh: null })])[0].latest).toMatchObject({ refLow: 40, status: 'in-range' });
   });
 
   it('groups by marker across reports, oldest first, with status and change', () => {

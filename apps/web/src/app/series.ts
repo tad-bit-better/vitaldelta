@@ -1,4 +1,4 @@
-import { detectDrift, effectiveRange, markers, matchMarker, nameKey, splitMethod, percentChange, rangeStatus, sameWord, wordStatus, type Drift, type RangeSource, type RangeStatus, type Sex, type WordStatus } from '@vitaldelta/extraction';
+import { currentMarkerId, detectDrift, effectiveRange, markers, matchMarker, nameKey, splitMethod, percentChange, rangeStatus, sameWord, wordStatus, type Drift, type RangeSource, type RangeStatus, type Sex, type WordStatus } from '@vitaldelta/extraction';
 import type { Report, Result } from '../storage/types';
 
 export type Point = {
@@ -50,7 +50,7 @@ const markerById = new Map(markers.map((m) => [m.id, m]));
  * marker's standard unit: nothing is converted or guessed after the user's review.
  */
 export function resolveMarkerId(r: Pick<Result, 'markerId' | 'name' | 'unit'>): string | null {
-  if (r.markerId) return r.markerId;
+  if (r.markerId) return currentMarkerId(r.markerId);
   const match = matchMarker(testName(r.name));
   return match?.method === 'exact' && r.unit === match.marker.unit ? match.marker.id : null;
 }

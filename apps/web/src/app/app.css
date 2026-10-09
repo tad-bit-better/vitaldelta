@@ -589,3 +589,8 @@ a.app-pill:hover { color: var(--text); }
   .rv-savebar-todo > span:first-child { display: none; }
   .rv-savebar-actions .app-btn-primary { flex: 1; }
 }
+
+/* About */
+.app-about { max-width: 760px; }
+.app-about-list { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 2px; }
+.app-footer-link { color: var(--text-2); text-underline-offset: 2px; white-space: nowrap; }

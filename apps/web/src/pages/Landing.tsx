@@ -224,6 +224,7 @@ export default function Landing({
           <span>VitalDelta · open source, private by design</span>
           <nav aria-label="Footer">
             <a href="#privacy">Privacy</a>
+            <a href="/app/about">About</a>
             <a href={githubHref}>GitHub</a>
           </nav>
         </div>

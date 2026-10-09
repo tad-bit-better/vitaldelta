@@ -1,3 +1,4 @@
+import { currentMarkerId } from '@vitaldelta/extraction';
 import type { NewProfile, NewReport, NewResult, Profile, Report, Result, Storage } from './types';
 
 const byCollectedDesc = (a: Report, b: Report) => b.collectedAt.localeCompare(a.collectedAt) || b.createdAt.localeCompare(a.createdAt);
@@ -52,7 +53,7 @@ export function createMemoryStorage(): Storage {
       if (!profiles.some((p) => p.id === profileId)) throw new Error(`No profile ${profileId}`);
       const report: Report = { ...input, id: crypto.randomUUID(), profileId, createdAt: new Date().toISOString() };
       reports = [...reports, report];
-      results = [...results, ...newResults.map((r) => ({ ...r, id: crypto.randomUUID(), reportId: report.id }))];
+      results = [...results, ...newResults.map((r) => ({ ...r, markerId: currentMarkerId(r.markerId), id: crypto.randomUUID(), reportId: report.id }))];
       return report;
     },
 

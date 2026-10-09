@@ -16,14 +16,15 @@ describe('effectiveRange', () => {
 
   it('falls back to the guideline when the report printed none', () => {
     expect(effectiveRange(result(HBA1C, '%'), null)).toEqual({
-      refLow: null, refHigh: 5.7, refLowStrict: false, refHighStrict: true, rangeSource: 'guideline', guidelineSource: 'ADA',
+      refLow: null, refHigh: 5.7, refLowStrict: false, refHighStrict: true, rangeSource: 'guideline', guidelineSource: 'ADA 2026',
     });
   });
 
-  it('uses sex-specific limits only when the sex is known', () => {
-    expect(effectiveRange(result(HDL, 'mg/dL'), 'male')).toMatchObject({ refLow: 40, rangeSource: 'guideline' });
-    expect(effectiveRange(result(HDL, 'mg/dL'), 'female')).toMatchObject({ refLow: 50, rangeSource: 'guideline' });
-    expect(effectiveRange(result(HDL, 'mg/dL'), null)).toMatchObject({ refLow: null, refHigh: null, rangeSource: 'report' });
+  it('uses sex-specific limits when the sex is known, otherwise the general limit', () => {
+    expect(effectiveRange(result(HDL, 'mg/dL'), 'male')).toMatchObject({ refLow: 40, rangeSource: 'guideline', guidelineSource: 'NCEP ATP III' });
+    // ATP III's "low HDL" is < 40 for everyone; the 50 for women is from its metabolic syndrome criteria.
+    expect(effectiveRange(result(HDL, 'mg/dL'), 'female')).toMatchObject({ refLow: 50, guidelineSource: 'ATP III metabolic syndrome' });
+    expect(effectiveRange(result(HDL, 'mg/dL'), null)).toMatchObject({ refLow: 40, rangeSource: 'guideline', guidelineSource: 'NCEP ATP III' });
   });
 
   it('gives no range for tests without a guideline, unknown tests, or values not in the standard unit', () => {

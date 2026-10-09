@@ -47,8 +47,10 @@ vocabulary in `src/methods.ts`, and stored as the result's method. Add a method 
 
 1. **Automated tests** on every change: LOINC check digits, unique ids, no shared names,
    no redundant synonyms, bounds in order.
-2. **Official LOINC table** (planned): a script checks every id exists in the downloaded
-   LOINC table (free account, kept out of git) and its official name matches.
+2. **LOINC codes checked against LOINC** (done 2026-10-09 for all 71): long name, component,
+   property, specimen and unit through the NLM Clinical Tables LOINC API, and status through
+   the HL7 FHIR terminology server (tx.fhir.org). loinc.org itself blocks automated access. Two
+   codes were corrected (below). Re-check any new code the same way.
 3. **Real reports** (planned, `pnpm harness`): hand-confirmed expected values per fixture,
    kept out of git; match rate and accuracy must not regress.
 4. **Human review**: PR checklist above; a one-time review of bounds and conversions by
@@ -82,18 +84,22 @@ clinical guidelines and labs print the same numbers. For those, a `guideline` ra
 when the report printed no range (often because the lab printed a "Desirable / Borderline /
 High" table instead, which extraction drops as guidance).
 
-| Test | Limit | Source |
+| Test | Limit | Source (label in the app) |
 |---|---|---|
-| HbA1c | < 5.7 % | ADA Standards of Care (normal; 5.7–6.4 prediabetes) |
-| Fasting glucose | ≥ 70 and < 100 mg/dL | ADA (< 100 normal fasting; < 70 is the hypoglycaemia alert level) |
-| Total cholesterol | < 200 mg/dL | NCEP ATP III (desirable) |
-| LDL cholesterol | < 100 mg/dL | NCEP ATP III (optimal) |
-| Triglycerides | < 150 mg/dL | NCEP ATP III (normal) |
-| Non-HDL cholesterol | < 130 mg/dL | National Lipid Association (desirable) |
-| HDL cholesterol | ≥ 40 mg/dL (male), ≥ 50 mg/dL (female) | NCEP ATP III (low HDL; the female limit is from its metabolic syndrome criteria) |
-| eGFR | ≥ 60 mL/min/1.73m² | KDIGO 2012 (below 60 is stage G3a or lower; 60–89 is G2, not flagged on its own) |
-| hs-CRP | ≤ 3 mg/L | AHA/CDC 2003 (cardiovascular risk: < 1 low, 1–3 average, > 3 high) |
-| Vitamin D (25-OH) | ≥ 20 ng/mL | IOM 2011 (below 20 is inadequate; IOM and the Endocrine Society agree on this floor, but not on 30, so 30 isn't used and there's no upper limit) |
+| HbA1c | < 5.7 % | ADA 2026, Standards of Care §2 (5.7–6.4 % prediabetes, ≥ 6.5 % diabetes) |
+| Fasting glucose | ≥ 70 and < 100 mg/dL | ADA 2026: < 100 normal (§2). ADA sets no lower normal limit; 70 is its level 1 hypoglycaemia threshold (§6), so below 70 is flagged |
+| Total cholesterol | < 200 mg/dL | NCEP ATP III (2001), "desirable" |
+| LDL cholesterol | < 100 mg/dL | NCEP ATP III, "optimal" |
+| Triglycerides | < 150 mg/dL | NCEP ATP III, "normal" |
+| Non-HDL cholesterol | < 130 mg/dL | NLA 2015 (Jacobson et al., J Clin Lipidol), "desirable" |
+| HDL cholesterol | ≥ 40 mg/dL; women ≥ 50 mg/dL | NCEP ATP III: < 40 is low for everyone (used when sex is unknown, and for men). The women's 50 is ATP III's metabolic syndrome criterion, labelled "ATP III metabolic syndrome" |
+| eGFR | ≥ 60 mL/min/1.73m² | KDIGO 2024: < 60 (G3a or lower) for 3 months is CKD by GFR alone. 60–89 is G2 "mildly decreased", so the app says "within the guideline range", never "normal" |
+| hs-CRP | ≤ 3 mg/L | AHA/CDC 2003 (Pearson et al., Circulation): < 1 low, 1–3 average, > 3 high risk |
+| Vitamin D (25-OH) | ≥ 20 ng/mL | IOM 2011 (now National Academy of Medicine): ≥ 20 adequate. The Endocrine Society 2024 guideline sets no thresholds, so it isn't cited; 30 isn't used and there's no upper limit |
+
+Checked against the sources on 2026-10-09 (ADA Standards of Care 2026 §2 and §6, ATP III
+Executive Summary tables 2 and 8, NLA 2015 Part 1, KDIGO 2024 CKD guideline, Pearson 2003,
+NIH ODS vitamin D fact sheet). Strict / inclusive limits match each source's wording.
 
 Considered and left out, because the lab sets the range or guidelines disagree: haemoglobin and
 the rest of the CBC, TSH and thyroid hormones, liver enzymes, creatinine, urea, electrolytes,
@@ -112,7 +118,9 @@ Rules:
   limits (vitamin D) stay out.
 - **Strict bounds** (`highStrict` / `lowStrict`) mean the limit itself is outside, matching
   how guidelines are written ("< 5.7").
-- **Sex-specific limits** go in `bySex`; with no known sex, no guideline range is used.
+- **Sex-specific limits** go in `bySex` (with their own `source` when they come from a different
+  part of the guideline); with no known sex, the top-level limit is used, or none if there isn't one.
+- **Every source carries its year** ("ADA 2026"), so it's clear which edition the limit comes from.
 - **The app always says which range it used** ("Above the guideline range", "< 200 · NCEP ATP
   III guideline"), and the doctor summary names each guideline in full.
 - Guideline ranges are applied when displaying (`effectiveRange` in `src/guideline.ts`), never
@@ -122,16 +130,17 @@ Rules:
 
 ## Known open questions
 
-- All codes were written from memory and pass only the check-digit test; verify against
-  loinc.org (step 2 above).
-- `1989-3` may be 25-hydroxyvitamin D3 specifically rather than total D2+D3.
-- Guideline limits above were written from memory; check them against the current ADA
-  Standards of Care, NCEP ATP III / NLA, KDIGO, AHA/CDC and IOM documents, and have someone
-  medical review them.
-- eGFR variants (CKD-EPI, MDRD) have different LOINC codes but share one marker here.
-- "Neutrophils", "Lymphocytes" etc. are the % markers; absolute counts aren't in the
-  dictionary yet. Matching rejects a name match whose unit can't convert (e.g. 10^3/µL
-  for a % marker), so absolute counts are kept as unrecognised rather than mixed up.
+- **Corrected codes**: vitamin D 1989-3 was 25-OH vitamin D3 only; it's now 62292-8 (D2 + D3,
+  what labs report). eGFR 62238-1 was the CKD-EPI 2009 equation; it's now 98979-8 (CKD-EPI 2021,
+  race-free). Saved results and old backups with the old codes are read under the new ones
+  (`RENAMED_MARKERS` in `src/dictionary.ts`). Any future code change must go there too.
+- **LDL** stays on 2089-1, which doesn't say how LDL was measured: reports print calculated LDL
+  (13457-7) or direct LDL (18262-6) and often don't say which.
+- **PDW** (32207-3) is PDW in fL. Some labs print PDW in %, a different LOINC test (51631-0); it
+  needs choosing the marker by unit, which isn't done yet.
+- eGFR by MDRD (33914-3) or a printed CKD-EPI 2009 still lands on the 2021 marker; the
+  equation isn't detected.
+- Unit conversion factors and plausibility bounds still need a review by someone medical.
 
 ## Licence
 

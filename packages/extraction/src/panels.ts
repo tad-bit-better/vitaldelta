@@ -22,12 +22,12 @@ export const panels: Panel[] = [
   { id: 'liver-enzymes', label: 'Liver enzymes', family: 'Liver function test', markers: ['1742-6', '1920-8', '6768-6', '2324-2'] },
   { id: 'bilirubin', label: 'Bilirubin', family: 'Liver function test', markers: ['1975-2', '1968-7', '1971-1'] },
   { id: 'proteins', label: 'Proteins', family: 'Liver function test', markers: ['2885-2', '1751-7', '10834-0', '1759-0'] },
-  { id: 'kidney', label: 'Kidney', family: 'Kidney function test', markers: ['2160-0', '3091-6', '3094-0', '3097-3', '3084-1', '62238-1'] },
+  { id: 'kidney', label: 'Kidney', family: 'Kidney function test', markers: ['2160-0', '3091-6', '3094-0', '3097-3', '3084-1', '98979-8'] },
   { id: 'electrolytes', label: 'Electrolytes', family: 'Electrolytes', markers: ['2951-2', '2823-3', '2075-0'] },
   { id: 'minerals', label: 'Minerals', family: 'Minerals', markers: ['17861-6', '2777-1', '19123-9'] },
   { id: 'thyroid', label: 'Thyroid', family: 'Thyroid profile', markers: ['3016-3', '3024-7', '3051-0', '3026-2', '3053-6'] },
   { id: 'iron', label: 'Iron', family: 'Iron studies', markers: ['2276-4', '2498-4', '2500-7', '2501-5', '2502-3'] },
-  { id: 'vitamins', label: 'Vitamins', family: 'Vitamins', markers: ['1989-3', '2132-9'] },
+  { id: 'vitamins', label: 'Vitamins', family: 'Vitamins', markers: ['62292-8', '2132-9'] },
   { id: 'inflammation', label: 'Inflammation', family: 'Inflammation markers', markers: ['30341-2', '1988-5', '30522-7'] },
 ];
 

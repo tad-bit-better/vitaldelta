@@ -29,6 +29,12 @@ describe('parseBackup', () => {
     expect(parse(b).profiles[0].aliases).toEqual([]);
   });
 
+  it('reads results saved under a LOINC code that has since been corrected under the new code', () => {
+    const old = valid();
+    Object.assign(old.results[0], { markerId: '1989-3' });
+    expect(parse(old).results[0].markerId).toBe('62292-8');
+  });
+
   it('reads backups made before word results existed, and word results', () => {
     const old = valid() as unknown as { results: Record<string, unknown>[] };
     delete old.results[0].textValue;

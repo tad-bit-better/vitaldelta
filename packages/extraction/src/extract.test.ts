@@ -91,7 +91,7 @@ describe('banded ranges', () => {
     const second = { ...row('30~Sufficiency :30 - 100~Toxicity', 'CLIA'), y: 117 };
     const third = { ...row(': >100'), y: 129 };
     const [vitD] = extractResults([first, second, third]);
-    expect(vitD).toMatchObject({ markerId: '1989-3', value: 23.4, refLow: 30, refHigh: 100, issues: ['banded-range'] });
+    expect(vitD).toMatchObject({ markerId: '62292-8', value: 23.4, refLow: 30, refHigh: 100, issues: ['banded-range'] });
     expect(vitD.confidence).toBeLessThan(REVIEW_THRESHOLD);
   });
 

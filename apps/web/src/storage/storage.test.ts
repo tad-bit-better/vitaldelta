@@ -164,6 +164,13 @@ describe.each([
     expect(await storage.lastBackupAt()).toBeNull();
   });
 
+  it('reads a result saved under a corrected LOINC code under the current code', async () => {
+    storage = create();
+    const a = await person('Arjun Mehta');
+    await storage.saveReport(a.id, report('2024-01-10'), [result({ markerId: '1989-3', name: 'Vitamin D', unit: 'ng/mL' })]);
+    expect((await storage.listResults())[0].markerId).toBe('62292-8');
+  });
+
   it('deletes everything', async () => {
     storage = create();
     const me = await person('Arjun Mehta');

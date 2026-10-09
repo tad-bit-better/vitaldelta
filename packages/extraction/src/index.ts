@@ -4,7 +4,7 @@ export { rowBox, type Box, type Row, type TextItem } from './types';
 export { groupRows, type GroupRowsOptions } from './rows';
 export { fromPdfJsItem, type PdfJsTextItem, type ToViewportPoint } from './pdfjs';
 export { parseNumber, parseRow, type Comparator, type ParsedRow } from './parse';
-export { markers, type Guideline, type GuidelineBounds, type Marker } from './dictionary';
+export { currentMarkerId, markers, RENAMED_MARKERS, type Guideline, type GuidelineBounds, type Marker } from './dictionary';
 export { nameKey } from './names';
 export { canonicalUnit, convert, type Conversion } from './units';
 export { createMatcher, matchMarker, suggestMarker, type MarkerMatch } from './match';

@@ -28,10 +28,10 @@ const PEOPLE: Person[] = [
       ['2089-1', [118, 126, 139, 152], null, 130], // LDL
       ['2085-9', [56, 54, 51, 49], 50, null], // HDL
       ['2571-8', [142, 150, 138, 160], null, 150], // Triglycerides
-      ['1989-3', [14, 19, 26, 39], 30, 100], // Vitamin D: back in range
+      ['62292-8', [14, 19, 26, 39], 30, 100], // Vitamin D: back in range
       ['3016-3', [2.1, 2.4, 2.2, 2.6], 0.4, 4.2], // TSH: steady
       ['2160-0', [0.8, 0.8, 0.9, 0.85], 0.6, 1.1], // Creatinine
-      ['62238-1', [null, 95, 90, 92], null, null], // eGFR: guideline applies
+      ['98979-8', [null, 95, 90, 92], null, null], // eGFR: guideline applies
       ['1742-6', [22, 28, 24, 31], 7, 35], // ALT
     ],
     // Results printed as words.
@@ -55,7 +55,7 @@ const PEOPLE: Person[] = [
       ['2093-3', [238, 205], null, 200],
       ['3016-3', [1.8, 1.9], 0.4, 4.2],
       ['2160-0', [1.1, 1.05], 0.7, 1.3],
-      ['62238-1', [78, 81], null, null],
+      ['98979-8', [78, 81], null, null],
     ],
     words: [['Urine Protein', ['Negative', 'Trace'], 'Negative']], // changed, now differs from expected
   },

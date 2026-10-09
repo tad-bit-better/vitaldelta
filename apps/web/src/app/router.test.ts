@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DATA_PATH, parseRoute, patientPath, summaryPath, testPath } from './router';
+import { ABOUT_PATH, DATA_PATH, parseRoute, patientPath, summaryPath, testPath } from './router';
 
 describe('routes', () => {
   it('round-trips patient and test paths, including unusual keys', () => {
@@ -11,6 +11,7 @@ describe('routes', () => {
   it('parses the add flow and falls back to home', () => {
     expect(parseRoute('/app/add')).toEqual({ name: 'add' });
     expect(parseRoute(DATA_PATH)).toEqual({ name: 'data' });
+    expect(parseRoute(ABOUT_PATH)).toEqual({ name: 'about' });
     expect(parseRoute('/app')).toEqual({ name: 'home' });
     expect(parseRoute('/app/')).toEqual({ name: 'home' });
     expect(parseRoute('/app/tests/718-7')).toEqual({ name: 'home' });
