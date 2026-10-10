@@ -333,5 +333,18 @@ what happens, why, and what to do.
   column was being read as an H flag, so the method column is split off before flags and units.
 - **"Neutrophils" etc. are ambiguous** (% or absolute count); the unit decides. A name match
   whose unit can't convert is rejected and kept as unrecognised.
+- **Scanned reports go through OCR** (`harness/ocr.ts` + `readItems` in `harness/pdf.ts`): a PDF
+  page with no text layer is rendered ~2000px wide with pdf.js (`@napi-rs/canvas` in Node) and
+  read by Tesseract; image files (jpg/png/webp) are OCR'd directly. Dividing word boxes by the
+  render scale puts them in the same top-left point space as a text layer, so grouping, parsing
+  and source boxes work unchanged. Each word takes its **line's** y and height, not its own: a
+  lowercase word's box is shorter and would trip the small-print → method rule, and one y per
+  printed line makes row grouping exact. The language model is the pinned
+  `@tesseract.js-data/eng` package read from node_modules (`langPath` a local dir; tesseract.js
+  reads it from disk and gunzips — nothing is downloaded, nothing leaves the machine); use
+  `OEM.LSTM_ONLY` to match the `4.0.0_best_int` model, and call `stopOcr()` or the worker
+  thread keeps the process alive. The harness scores text PDFs and OCR files **separately**
+  (the baseline has an `ocr` entry): OCR is less accurate, and one average would let a
+  regression on either side hide behind the other.
 - **LOINC codes and conversion factors were written from memory** and pass only automated
   checks. Verify before launch (see `docs/dictionary.md`).

@@ -72,7 +72,8 @@ Native mobile (React Native) is v2 and will reuse `packages/extraction`.
 - Dates as ISO strings; refLow/refHigh nullable (one-sided ranges like "<200")
 
 ## Conventions
-- Sample report PDFs live in `fixtures/` and are **gitignored** (real personal data)
+- Sample reports live in `fixtures/` and are **gitignored** (real personal data); PDFs with a
+  text layer are read directly, scanned PDFs and images (jpg/png/webp) go through local OCR
 - Demo data in `apps/web/src/demo/` is synthetic only — never derived from real reports
 - `pnpm harness` reports the extraction match rate across fixtures, and accuracy against
   hand-confirmed `.expected.json` files (draft one per fixture with `pnpm --filter

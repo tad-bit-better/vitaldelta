@@ -31,6 +31,8 @@ Things decided or found in conversation that aren't done yet.
 - [ ] Grow fixtures/ to 10–20 real reports from different labs and confirm their expected values (`pnpm --filter @vitaldelta/extraction expected <n>`), so accuracy is measured, not assumed
 - [x] Cross-check arithmetic relations (indirect bili, globulin, ratios, non-HDL, VLDL, absolute counts, red-cell indices, iron studies) and the printed H/L flag against the parsed range
 - [ ] Accuracy next step: header-anchored column parsing (read the printed "Test | Result | Unit | Range" header's x-positions instead of relying on token order)
+- [x] OCR for scanned reports in the harness: a PDF page with no text layer is rendered and read by Tesseract (local, pinned model), image fixtures (jpg/png/webp) work too, and OCR files are scored separately from text PDFs (own baseline entry)
+- [ ] OCR in the web app: accept scanned PDFs and photo/image uploads, Tesseract.js in the browser with self-hosted worker/wasm/language files (CSP stays `connect-src 'self'`), OCR'd results always confirmed in review
 - [ ] Test on a real iPhone (Add to Home Screen, offline) and Android (Install); automated tests cover desktop Chrome only
 - [ ] Add markers with guideline limits: urine albumin/creatinine ratio (KDIGO < 30 mg/g), 2-hour / post-meal glucose (ADA < 140 mg/dL)
 - [ ] Maybe later: read the lab's own "Desirable / Borderline / High" guidance table as the report's range, instead of dropping it

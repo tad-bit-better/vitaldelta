@@ -14,8 +14,11 @@
     "expected": "tsx harness/expected.ts"
   },
   "devDependencies": {
+    "@napi-rs/canvas": "^1.0.10",
+    "@tesseract.js-data/eng": "^1.0.0",
     "@types/node": "^24.19.1",
     "pdfjs-dist": "6.3.289",
+    "tesseract.js": "^7.0.0",
     "tsx": "^4.23.15",
     "typescript": "~6.0.2",
     "vitest": "^3.2.0"

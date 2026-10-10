@@ -13,10 +13,11 @@
  * then set "confirmed": true.
  */
 import { createHash } from 'node:crypto';
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { extractResults, extractWordResults, groupRows } from '../src/index';
-import { readPdf } from './pdf';
+import { stopOcr } from './ocr';
+import { listFixtures, readItems } from './pdf';
 import { fileLabel } from './privacy';
 import type { ExpectedFile, ExpectedResult } from './score';
 
@@ -27,20 +28,21 @@ const option = (name: string) => {
 };
 const target = args.find((a, i) => !a.startsWith('--') && args[i - 1] !== '--password');
 if (!target) {
-  console.error('Usage: expected <number in fixtures/ | path to PDF> [--force] [--password x] [--names]');
+  console.error('Usage: expected <number in fixtures/ | path to PDF or image> [--force] [--password x] [--names]');
   process.exit(2);
 }
 const fixturesDir = join(import.meta.dirname, '../../../fixtures');
-const fixtures = existsSync(fixturesDir) ? readdirSync(fixturesDir).filter((f) => f.toLowerCase().endsWith('.pdf')).sort() : [];
+const fixtures = listFixtures(fixturesDir);
 const index = /^\d+$/.test(target) ? Number(target) - 1 : null;
 if (index !== null && !fixtures[index]) {
-  console.error(`There are ${fixtures.length} PDFs in fixtures/.`);
+  console.error(`There are ${fixtures.length} reports in fixtures/.`);
   process.exit(2);
 }
 const file = index !== null ? join(fixturesDir, fixtures[index]) : resolve(process.env.INIT_CWD ?? process.cwd(), target);
-const outPath = join(dirname(file), `${basename(file, '.pdf')}.expected.json`);
+const stem = basename(file).replace(/\.[^.]+$/, '');
+const outPath = join(dirname(file), `${stem}.expected.json`);
 // File names often hold the patient's name; print the fixture number instead (--names to override).
-const shownOut = args.includes('--names') ? outPath : `fixtures/${index !== null ? `#${index + 1}` : basename(file, '.pdf').replace(/./g, '*')}.expected.json`;
+const shownOut = args.includes('--names') ? outPath : `fixtures/${index !== null ? `#${index + 1}` : stem.replace(/./g, '*')}.expected.json`;
 
 if (existsSync(outPath) && !args.includes('--force')) {
   console.error(`${shownOut} already exists. Use --force to overwrite it (your confirmed values would be lost).`);
@@ -60,7 +62,7 @@ if (!password && existsSync(passwordsPath)) {
   }
 }
 
-const rows = groupRows(await readPdf(file, password));
+const rows = groupRows((await readItems(file, password)).items);
 const results: ExpectedResult[] = [
   ...extractResults(rows).map((r) => ({
     ...(r.markerId ? { markerId: r.markerId } : {}),
@@ -85,3 +87,4 @@ console.log('  1. Open the PDF and the .expected.json side by side.');
 console.log('  2. Fix any value, unit or range that was read wrong; add rows the reader missed;');
 console.log('     delete rows that aren’t results, or just the fields you can’t verify.');
 console.log('  3. Set "confirmed": true. Then `pnpm harness` scores accuracy against it.');
+await stopOcr();
