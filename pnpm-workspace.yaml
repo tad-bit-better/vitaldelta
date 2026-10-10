@@ -3,3 +3,5 @@ packages:
   - "packages/*"
 allowBuilds:
   esbuild: true
+  # Its postinstall only prints a donation banner; nothing needs to run.
+  tesseract.js: false
