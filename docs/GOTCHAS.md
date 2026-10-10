@@ -346,9 +346,14 @@ what happens, why, and what to do.
   page with no text layer is rendered ~2000px wide with pdf.js (`@napi-rs/canvas` in Node) and
   read by Tesseract; image files (jpg/png/webp) are OCR'd directly. Dividing word boxes by the
   render scale puts them in the same top-left point space as a text layer, so grouping, parsing
-  and source boxes work unchanged. Each word takes its **line's** y and height, not its own: a
-  lowercase word's box is shorter and would trip the small-print → method rule, and one y per
-  printed line makes row grouping exact. The language model is the pinned
+  and source boxes work unchanged. Every word on a physical row gets the row's **median** word
+  centre and height (`ocrTextItems`), never the line's bounding box or its own: scans are often
+  slightly tilted, which stretches a line's box until adjacent rows merge in row grouping (a
+  value then picks up the next test's range — found on a real scan), a pen stroke or table
+  border swept into a line must not do the same, and a lowercase word's own short box would
+  trip the small-print → method rule. Tesseract can also bundle two printed rows into one
+  "line", so words are first re-clustered by their vertical centres (`splitRows`). The
+  language model is the pinned
   `@tesseract.js-data/eng` package read from node_modules (`langPath` a local dir; tesseract.js
   reads it from disk and gunzips — nothing is downloaded, nothing leaves the machine); use
   `OEM.LSTM_ONLY` to match the `4.0.0_best_int` model, and call `stopOcr()` or the worker

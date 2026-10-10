@@ -17,9 +17,10 @@ describe('ocrTextItems', () => {
         ],
       },
     ];
+    // The row's y and height are the median word centre and height (both words centre on 215).
     expect(ocrTextItems(blocks, 2, 2)).toEqual([
-      { text: 'Haemoglobin', x: 50, y: 100, width: 100, height: 15, page: 2 },
-      { text: '13.5', x: 200, y: 100, width: 30, height: 15, page: 2 },
+      { text: 'Haemoglobin', x: 50, y: 101.5, width: 100, height: 12, page: 2 },
+      { text: '13.5', x: 200, y: 101.5, width: 30, height: 12, page: 2 },
     ]);
   });
 
@@ -39,6 +40,53 @@ describe('ocrTextItems', () => {
     const [mean, scan] = ocrTextItems(blocks, 1);
     expect(scan.y).toBe(mean.y);
     expect(scan.height).toBe(mean.height);
+  });
+
+  it('ignores a bogusly tall line box (a swept-in table border): the words set the row box', () => {
+    const blocks: OcrBlock[] = [
+      {
+        paragraphs: [
+          {
+            lines: [
+              // The line claims the whole page's height; its words are normal-sized.
+              { bbox: box(0, 0, 500, 842), words: [{ text: 'MCHC', bbox: box(10, 710, 60, 725) }, { text: '32.3', bbox: box(200, 711, 240, 724) }] },
+            ],
+          },
+        ],
+      },
+    ];
+    const [name, value] = ocrTextItems(blocks, 1);
+    expect(name).toMatchObject({ y: 710.5, height: 14 });
+    expect(value).toMatchObject({ y: 710.5, height: 14 });
+  });
+
+  it('splits a line that bundles two printed rows into one, so each keeps its own row', () => {
+    const blocks: OcrBlock[] = [
+      {
+        paragraphs: [
+          {
+            lines: [
+              {
+                // One Tesseract "line" holding MCHC's row and RDW's row (a pen stroke confused it).
+                bbox: box(10, 700, 500, 732),
+                words: [
+                  { text: 'MCHC', bbox: box(10, 700, 60, 714) },
+                  { text: '32.3', bbox: box(200, 701, 240, 713) },
+                  { text: 'RDW-CV(%)', bbox: box(10, 718, 90, 732) },
+                  { text: '13.8', bbox: box(200, 719, 240, 731) },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ];
+    const items = ocrTextItems(blocks, 1);
+    const ys = new Set(items.map((i) => i.y));
+    expect(ys.size).toBe(2);
+    expect(items.find((i) => i.text === 'MCHC')!.y).toBe(items.find((i) => i.text === '32.3')!.y);
+    expect(items.find((i) => i.text === 'RDW-CV(%)')!.y).toBe(items.find((i) => i.text === '13.8')!.y);
+    expect(items.find((i) => i.text === 'RDW-CV(%)')!.y).toBeGreaterThan(items.find((i) => i.text === 'MCHC')!.y);
   });
 
   it('skips empty words and handles missing blocks', () => {
