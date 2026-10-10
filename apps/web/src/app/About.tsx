@@ -66,7 +66,7 @@ export default function About() {
           registered United States trademark of Regenstrief Institute, Inc.
         </p>
         <p className="app-note">
-          Built with pdf.js (Apache 2.0), React (MIT) and Dexie (Apache 2.0). Fonts: Bricolage Grotesque, Manrope and IBM
+          Built with pdf.js (Apache 2.0), Tesseract.js (Apache 2.0), React (MIT) and Dexie (Apache 2.0). Fonts: Bricolage Grotesque, Manrope and IBM
           Plex Mono (SIL Open Font License 1.1). All are served from this site; nothing is loaded from elsewhere.
         </p>
       </div>

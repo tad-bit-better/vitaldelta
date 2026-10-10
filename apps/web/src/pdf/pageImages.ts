@@ -14,6 +14,20 @@ export type PageImages = {
 /** Pixel width pages are drawn at: sharp on a laptop at 2× zoom, ~100–250 KB as JPEG. */
 const TARGET_WIDTH = 1400;
 
+/** A photo or scan image shown as a one-page document; item coordinates are its pixels. */
+export function imagePages(blob: Blob, width: number, height: number): PageImages {
+  let url: string | null = null;
+  return {
+    count: 1,
+    size: () => ({ width, height }),
+    image: () => Promise.resolve((url ??= URL.createObjectURL(blob))),
+    close() {
+      if (url) URL.revokeObjectURL(url);
+      url = null;
+    },
+  };
+}
+
 /**
  * Opens a PDF for display. Everything stays in this tab: pages are drawn to a canvas and kept
  * as in-memory JPEG blobs, never stored. `bytes` is copied, so the caller's copy stays usable.

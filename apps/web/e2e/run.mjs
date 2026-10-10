@@ -133,8 +133,8 @@ const send = (method, params = {}) =>
 const evaluate = async (expression) =>
   (await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true })).result?.result?.value;
 const text = (selector) => evaluate(`document.querySelector(${JSON.stringify(selector)})?.innerText.replace(/\\s+/g, ' ').trim() ?? null`);
-const waitFor = async (expression, label) => {
-  for (let i = 0; i < 80; i++) {
+const waitFor = async (expression, label, tries = 80) => {
+  for (let i = 0; i < tries; i++) {
     if (await evaluate(expression)) return true;
     await sleep(250);
   }
@@ -305,6 +305,39 @@ try {
   await pickPatient('Arjun Mehta');
   check(Boolean(await text('#review-duplicate')), 'duplicate report flagged');
   check(!(await saveEnabled()), 'duplicate: save blocked until confirmed');
+  await click('Discard');
+  await sleep(300);
+
+  // ---------- Scanned report (OCR) ----------
+  // A made-up report drawn on a canvas (synthetic values only), saved as a JPEG and uploaded
+  // as a photo would be. First OCR fetches the engine (~6.5 MB, own origin), so waits are long.
+  console.log('\nScanned report (OCR)');
+  const jpeg = await evaluate(`(() => {
+    const c = document.createElement('canvas'); c.width = 1240; c.height = 500;
+    const g = c.getContext('2d');
+    g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+    g.fillStyle = '#111'; g.font = '28px Arial';
+    const rows = [['Patient Name : Mr. ARJUN MEHTA'], ['Sample Collected On : 10/06/2022'],
+      ['Test Name', 'Result', 'Unit', 'Reference Range'],
+      ['Haemoglobin', '14.1', 'g/dL', '13.0 - 17.0'],
+      ['Total Cholesterol', '190', 'mg/dL', '< 200']];
+    const xs = [60, 560, 740, 900];
+    let y = 80;
+    for (const row of rows) { row.forEach((t, i) => g.fillText(t, xs[i], y)); y += 48; }
+    return c.toDataURL('image/jpeg', 0.95);
+  })()`);
+  writeFileSync(join(work, 'scan.jpg'), Buffer.from(jpeg.split(',')[1], 'base64'));
+  await click('+ Add a report') || (await click('Add a report'));
+  await waitFor(`!!document.querySelector('input[type=file]')`, 'upload screen');
+  await upload('scan.jpg');
+  check(await waitFor(`document.body.innerText.includes('Report is for')`, 'OCR review', 360), 'a photo of a report is read by OCR');
+  check((await patientOptions())?.includes('Arjun Mehta (suggested)'), 'OCR report suggests its patient');
+  check((await evaluate(`document.body.innerText.includes('Read from a scan')`)), 'OCR rows are held for review, marked as read from a scan');
+  check(
+    await evaluate(`(() => { const c = [...document.querySelectorAll('.rv-check')].find((c) => c.innerText.includes('Haemoglobin')); return !!c && [...c.querySelectorAll('input')].some((i) => i.value === '14.1'); })()`),
+    'OCR read the printed value correctly',
+  );
+  check(await waitFor(`[...document.querySelectorAll('.rv-check .rv-snippet img')].some((i) => i.complete && i.naturalWidth > 0)`, 'OCR snippet'), 'each OCR value shows where it sits on the photo');
   await click('Discard');
   await sleep(300);
 

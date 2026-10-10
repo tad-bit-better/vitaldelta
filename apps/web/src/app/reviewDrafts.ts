@@ -86,7 +86,7 @@ export function draftRange(d: Pick<Draft, 'refLow' | 'refHigh'>): string {
 }
 
 /** Most important first: the chip on a check card names the first one present. */
-const ISSUE_ORDER: Issue[] = ['implausible', 'inconsistent', 'flag-mismatch', 'unrecognised', 'fuzzy-name', 'unknown-unit', 'missing-unit', 'bound-only', 'duplicate', 'odd-range', 'banded-range', 'missing-range'];
+const ISSUE_ORDER: Issue[] = ['implausible', 'inconsistent', 'flag-mismatch', 'unrecognised', 'fuzzy-name', 'unknown-unit', 'missing-unit', 'bound-only', 'duplicate', 'odd-range', 'banded-range', 'missing-range', 'ocr'];
 
 export const ISSUE_CHIP: Record<Issue, string> = {
   implausible: 'Unusual value',
@@ -101,6 +101,7 @@ export const ISSUE_CHIP: Record<Issue, string> = {
   'odd-range': 'Range looks odd',
   'banded-range': 'Range in bands',
   'missing-range': 'No range printed',
+  ocr: 'Read from a scan',
 };
 
 export function mainIssue(d: Draft): Issue | null {
@@ -139,6 +140,9 @@ export function issueMessages(d: Draft): string[] {
   if (issues.includes('odd-range')) out.push('The range looks wrong. Check the limits against the PDF.');
   if (issues.includes('banded-range')) out.push('The report gives the range as categories (like deficient / sufficient / toxic). The normal category was used; check it.');
   if (issues.includes('missing-range') && !issues.includes('implausible')) out.push('No range was found. Add it if the report prints one.');
+  if (issues.includes('ocr')) {
+    out.push('This was read from a scan or photo, where misreading a digit is more likely than from a PDF’s own text. Check the value and range against the picture.');
+  }
   return out;
 }
 

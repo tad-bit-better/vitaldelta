@@ -22,12 +22,21 @@ what happens, why, and what to do.
   browser may read PDFs differently.
 - **pdf.js position → TextItem conversion lives in one place**: `fromPdfJsItem` in
   `packages/extraction/src/pdfjs.ts`. Don't re-implement it in the web app or the harness.
-- **pdf.js data files are copied, not committed.** `apps/web/scripts/copy-pdfjs-assets.mjs`
-  copies cmaps and standard fonts into `apps/web/public/pdfjs/` (gitignored) as part of
-  `dev` and `build`. Running `vite` directly skips the copy.
-- **pdf.js's image-decoding WASM isn't shipped.** Text extraction doesn't need it, and it
-  would require `'wasm-unsafe-eval'` in the CSP. If OCR or image decoding is ever added,
-  that's a CSP decision.
+- **Vendor data files are copied, not committed.** `apps/web/scripts/copy-vendor-assets.mjs`
+  copies pdf.js cmaps and standard fonts into `apps/web/public/pdfjs/`, and the Tesseract
+  worker, wasm cores and English model into `apps/web/public/ocr/` (both gitignored) as part
+  of `dev` and `build`. Running `vite` directly skips the copy.
+- **OCR in the browser** (`pdf/ocr.ts`): a PDF whose text layer is empty (`PdfNoTextError`) is
+  rendered page by page and read by Tesseract.js; image uploads (photo/scan) are decoded
+  through an `<img>` (EXIF rotation applied, HEIC works where the browser decodes it),
+  downscaled to ≤2000 px and OCR'd, and the review screen shows the picture itself
+  (`imagePages`). Everything is served from our origin and lazy-loaded: the browser picks one
+  wasm core by SIMD support (~3.7 MB) plus the model (2.8 MB), cached by the service worker at
+  first use (never precached). The shared box maths is `ocrTextItems` in
+  `packages/extraction/src/ocr.ts` — the harness and the app must map OCR words identically.
+  Every OCR'd result gets the `ocr` issue and confidence ≤ `OCR_CONFIDENCE` (`markOcr`), so
+  the user confirms each one against the picture; running wasm needed `'wasm-unsafe-eval'`
+  added to `script-src` (it allows WebAssembly only, not `eval`; `connect-src` is unchanged).
 - **`.expected.json` files in fixtures/ hold real values** and are gitignored with the PDFs.
   The harness and the `expected` tool print only counts, test names and which field differed,
   never values. Scoring rules live in `harness/score.ts`, unit-tested with synthetic data; an

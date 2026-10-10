@@ -5,7 +5,8 @@
 const VERSION = '__VERSION__';
 const PRECACHE = __PRECACHE__;
 const CACHE = `vitaldelta-${VERSION}`;
-// pdf.js character maps (1.6 MB, needed only for some fonts) are cached the first time they're used.
+// Big, rarely-needed vendor files — pdf.js character maps (1.6 MB) and the OCR engine
+// (~7 MB, only for scanned reports) — are cached the first time they're used, not up front.
 const RUNTIME = '__RUNTIME_CACHE__';
 
 // Browsers refuse a redirected response as a page, so store a plain copy.
@@ -59,7 +60,7 @@ self.addEventListener('fetch', (event) => {
       (hit) =>
         hit ??
         fetch(request).then((response) => {
-          if (response.ok && url.pathname.startsWith('/pdfjs/')) {
+          if (response.ok && (url.pathname.startsWith('/pdfjs/') || url.pathname.startsWith('/ocr/'))) {
             const copy = response.clone();
             event.waitUntil(caches.open(RUNTIME).then((cache) => cache.put(request, copy)));
           }

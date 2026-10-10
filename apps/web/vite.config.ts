@@ -79,7 +79,9 @@ function serviceWorker(): Plugin {
     readdirSync(new URL(dir, publicDir), { withFileTypes: true }).flatMap((e) =>
       e.isDirectory() ? list(`${dir}${e.name}/`) : [`${dir}${e.name}`],
     )
-  const pdfjsVersion = (createRequire(import.meta.url)('pdfjs-dist/package.json') as { version: string }).version
+  const vendorRequire = createRequire(import.meta.url)
+  const pdfjsVersion = (vendorRequire('pdfjs-dist/package.json') as { version: string }).version
+  const tesseractVersion = (vendorRequire('tesseract.js/package.json') as { version: string }).version
   return {
     name: 'vitaldelta-service-worker',
     apply: 'build',
@@ -88,7 +90,8 @@ function serviceWorker(): Plugin {
     generateBundle(_, bundle) {
       const built = Object.keys(bundle).filter((f) => !f.endsWith('.map'))
       // og.png is only for link previews, so it isn't stored for offline use.
-      const fromPublic = list('').filter((f) => !f.startsWith('pdfjs/cmaps/') && f !== 'og.png' && !f.endsWith('.DS_Store'))
+      // cmaps and the OCR engine are big and rarely needed: cached at first use, not precached.
+      const fromPublic = list('').filter((f) => !f.startsWith('pdfjs/cmaps/') && !f.startsWith('ocr/') && f !== 'og.png' && !f.endsWith('.DS_Store'))
       if (!built.includes('index.html')) this.error('index.html missing from the bundle; the offline app needs it')
       // app.html is emitted by prerenderLanding; it's index.html's shell, so index.html's hash covers it.
       const files = [...new Set([...built, ...fromPublic, 'app.html'])].sort()
@@ -106,7 +109,7 @@ function serviceWorker(): Plugin {
         .replace('__VERSION__', hash.digest('hex').slice(0, 12))
         // The page itself is cached as "/" (some servers redirect /index.html to /).
         .replace('__PRECACHE__', JSON.stringify(files.map((f) => (f === 'index.html' ? '/' : `/${f}`))))
-        .replace('__RUNTIME_CACHE__', `vitaldelta-pdfjs-${pdfjsVersion}`)
+        .replace('__RUNTIME_CACHE__', `vitaldelta-vendor-${pdfjsVersion}-${tesseractVersion}`)
       this.emitFile({ type: 'asset', fileName: 'sw.js', source })
     },
   }

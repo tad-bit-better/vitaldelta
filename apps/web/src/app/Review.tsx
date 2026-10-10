@@ -42,7 +42,7 @@ const NARROW = '(max-width: 1023px)';
 export default function Review({ extracted, onSaved, onCancel, onBack, onOpenPatient }: Props) {
   const storage = useStorage();
   const data = useAppData();
-  const pages = usePageImages(extracted.pdf);
+  const pages = usePageImages(extracted.source);
   const detected = extracted.patient;
   const suggested = suggestProfile(data.profiles, detected);
   const [patient, setPatient] = useState<PatientChoice>(null);

@@ -53,7 +53,8 @@ Native mobile (React Native) is v2 and will reuse `packages/extraction`.
 - Vitest for unit tests
 
 ## Extraction pipeline (packages/extraction)
-1. Text items with coordinates `{text, x, y, page}` (pdf.js adapter lives in apps/web)
+1. Text items with coordinates `{text, x, y, page}` (pdf.js adapter lives in apps/web;
+   scanned pages and photos get the same items from Tesseract OCR, run locally in a worker)
 2. Group into rows by vertical position (tolerance), sort left to right
 3. Parse each row into name / value / unit / reference range
 4. Match name to a canonical marker via `dictionary.json`

@@ -15,6 +15,7 @@ export type Issue =
   | 'implausible' // value is outside what's physically possible: likely a misread
   | 'inconsistent' // disagrees with the report's own arithmetic (see inconsistentWith)
   | 'flag-mismatch' // the printed H/L flag contradicts the printed range
+  | 'ocr' // read from a scan or photo by OCR, where misreads are more likely (see ocr.ts)
   | 'missing-range' // no reference range printed
   | 'odd-range' // reference range doesn't make sense (low ≥ high)
   | 'banded-range' // range printed as bands (deficient / sufficient / ...): the normal band was used, or none found

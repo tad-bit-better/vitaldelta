@@ -1,8 +1,9 @@
 # VitalDelta
 
-**See how your lab results change over time.** VitalDelta reads lab report PDFs in your
-browser, pulls out the values, and lines them up across reports, so you can walk into a
-doctor's visit with one page showing what changed and what's outside the range.
+**See how your lab results change over time.** VitalDelta reads lab reports — PDFs, or
+photos and scans of paper ones — in your browser, pulls out the values, and lines them up
+across reports, so you can walk into a doctor's visit with one page showing what changed
+and what's outside the range.
 
 **[vitaldelta.app](https://vitaldelta.app)** · [Try the demo](https://vitaldelta.app/app?demo=1) (made-up data, nothing saved) · Free and open source (MIT)
 
@@ -10,8 +11,8 @@ doctor's visit with one page showing what changed and what's outside the range.
 
 ## Your reports never leave your device
 
-There is no server and no account. PDFs are read by JavaScript in your browser and results
-are stored in your browser's IndexedDB. You don't have to take that on trust: the site's
+There is no server and no account. Reports are read by JavaScript in your browser — OCR for
+scans included — and results are stored in your browser's IndexedDB. You don't have to take that on trust: the site's
 [Content Security Policy](apps/web/vercel.json) sets `connect-src 'self'`, so the browser
 itself blocks any request that could send data to another server. No analytics, no
 trackers, no cloud OCR or AI calls.
@@ -22,9 +23,13 @@ trackers, no cloud OCR or AI calls.
 
 ## What it does
 
-- **Reads any lab's PDF**: no per-lab templates. It finds the rows, matches test names
-  against a dictionary of 71 tests (with LOINC codes and the many names labs print),
+- **Reads any lab's report**: no per-lab templates. It finds the rows, matches test names
+  against a dictionary of 72 tests (with LOINC codes and the many names labs print),
   converts units, and reads the reference range printed on the report.
+- **Scans and photos too**: a PDF with no text layer, or a photo of a paper report, is read
+  by [Tesseract](https://github.com/tesseract-ocr/tesseract) OCR running in your browser
+  (served from this site, so the picture still never leaves your device). Every OCR'd value
+  is shown beside its spot on the picture for you to confirm.
 - **You confirm every value.** Rows it's unsure about are highlighted for a check before saving.
 - **Tracks each test over time**, with a chart and the report's range shaded behind it.
 - **Shows what changed since the last report**: newly outside the range, back in range,
@@ -43,14 +48,16 @@ It isn't medical advice; talk to your doctor about your results.
 |---|---|---|
 | ![Review screen](docs/images/review.png) | ![HbA1c over time](docs/images/test.png) | ![Doctor summary](docs/images/summary.png) |
 
-**Not yet supported:** scanned or photographed reports (no text layer, so they need OCR), and
-more than one PDF per upload.
+**Not yet supported:** more than one file per upload, and hand-held photos work best when
+they're sharp and straight-on (there's no perspective correction yet).
 
 ## How it works
 
 ```mermaid
 flowchart LR
   pdf[Lab report PDF] --> pdfjs["pdf.js (Web Worker)<br/>text + positions"]
+  photo[Photo or scan] --> ocr["Tesseract OCR (Web Worker)<br/>words + positions"]
+  ocr --> rows
   subgraph ext["packages/extraction (pure TypeScript)"]
     rows[Group into rows] --> parse["Parse name · value ·<br/>unit · range"]
     parse --> match["Match to dictionary<br/>(synonyms, LOINC)"]

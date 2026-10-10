@@ -10,6 +10,7 @@ export { canonicalUnit, convert, type Conversion } from './units';
 export { createMatcher, matchMarker, suggestMarker, type MarkerMatch } from './match';
 export { isMethod, splitMethod } from './methods';
 export { extractResults, REVIEW_THRESHOLD, type ExtractedResult, type Issue } from './extract';
+export { markOcr, OCR_CONFIDENCE, ocrTextItems, type OcrBlock } from './ocr';
 export { extractWordResults, hasWordResults, sameWord, wordStatus, type ExtractedWordResult, type WordStatus } from './words';
 export { detectReportDate, findDate, type DetectedDate } from './reportDate';
 export { detectDrift, type Drift, type DriftOptions } from './trends';

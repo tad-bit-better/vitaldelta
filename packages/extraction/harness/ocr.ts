@@ -8,7 +8,7 @@
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { createWorker, OEM, type Worker } from 'tesseract.js';
-import type { TextItem } from '../src/index';
+import { ocrTextItems, type TextItem } from '../src/index';
 
 const langPath = join(dirname(createRequire(import.meta.url).resolve('@tesseract.js-data/eng/package.json')), '4.0.0_best_int');
 
@@ -18,27 +18,7 @@ const worker = () => (shared ??= createWorker('eng', OEM.LSTM_ONLY, { langPath, 
 /** Reads one page image (PNG/JPEG bytes) into text items, at `scale` image pixels per point. */
 export async function ocrImage(image: Buffer, page: number, scale = 1): Promise<TextItem[]> {
   const { data } = await (await worker()).recognize(image, {}, { blocks: true });
-  const items: TextItem[] = [];
-  for (const block of data.blocks ?? []) {
-    for (const paragraph of block.paragraphs) {
-      for (const line of paragraph.lines) {
-        for (const word of line.words) {
-          if (!word.text.trim()) continue;
-          // The line's vertical extent, not the word's: an x-height-only word would otherwise
-          // look like small print to the parser, and row grouping gets one y per printed line.
-          items.push({
-            text: word.text,
-            x: word.bbox.x0 / scale,
-            y: line.bbox.y0 / scale,
-            width: (word.bbox.x1 - word.bbox.x0) / scale,
-            height: (line.bbox.y1 - line.bbox.y0) / scale,
-            page,
-          });
-        }
-      }
-    }
-  }
-  return items;
+  return ocrTextItems(data.blocks, page, scale);
 }
 
 /** Terminates the shared worker; without this the process never exits. */
